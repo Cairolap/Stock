@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ระบบบริหารสต๊อกวัสดุ | Stock Management Mobile</title>
+  <meta name="description" content="ระบบจัดการสต๊อกวัสดุคลังสินค้า Mobile-First ออกแบบเพื่อความรวดเร็ว ตรวจสอบย้อนหลังได้ 100% บน Cloudflare">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand-title">
+      <div class="brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3.5l7 4v9l-7 4-7-4v-9l7-4z" stroke="#0ea5e9" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M12 11.5l7-4M12 11.5v9M12 11.5l-7-4" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">คลังวัสดุช่าง & พัสดุ</div>
+        <div class="brand-badge">Mobile-First Stock · D1 Ledger</div>
+      </div>
+    </div>
+    <div>
+      <button id="btn-open-create-part" class="chip" style="background: var(--brand-tint); color: var(--brand-primary); border-color: var(--brand-primary); font-weight: 700;">
+        + เพิ่มวัสดุ
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="main-content">
+
+    <!-- View 1: Dashboard -->
+    <section id="view-dashboard" class="app-view active">
+      <!-- KPI Summary Cards -->
+      <!-- KPI Summary Cards (Single Row of 4 Slots) -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-negative" id="card-kpi-negative">
+          <div class="kpi-label">
+            <svg class="kpi-svg-icon" viewBox="0 0 24 24" fill="none">
+              <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" stroke="#c026d3" stroke-width="2.2" stroke-linejoin="round"/>
+              <line x1="12" y1="8" x2="12" y2="13" stroke="#c026d3" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="12" cy="16.5" r="1.3" fill="#c026d3"/>
+            </svg>
+            <span>ติดลบ</span>
+          </div>
+          <div class="kpi-value num-tabular" id="val-negative-count">0</div>
+        </div>
+
+        <div class="kpi-card kpi-out" id="card-kpi-out">
+          <div class="kpi-label">
+            <svg class="kpi-svg-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="#e11d48" stroke-width="2.2"/>
+              <line x1="6.5" y1="6.5" x2="17.5" y2="17.5" stroke="#e11d48" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+            <span>หมดสต๊อก</span>
+          </div>
+          <div class="kpi-value num-tabular" id="val-out-count">0</div>
+        </div>
+
+        <div class="kpi-card kpi-low" id="card-kpi-low">
+          <div class="kpi-label">
+            <svg class="kpi-svg-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3l9 16H3l9-16z" stroke="#d97706" stroke-width="2.2" stroke-linejoin="round"/>
+              <line x1="12" y1="9" x2="12" y2="13.5" stroke="#d97706" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="12" cy="16.5" r="1.2" fill="#d97706"/>
+            </svg>
+            <span>ต้องเติม</span>
+          </div>
+          <div class="kpi-value num-tabular" id="val-low-count">0</div>
+        </div>
+
+        <div class="kpi-card kpi-total" id="card-kpi-total">
+          <div class="kpi-label">
+            <svg class="kpi-svg-icon" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" stroke="#2563eb" stroke-width="2.2"/>
+              <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" stroke="#2563eb" stroke-width="2.2"/>
+              <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" stroke="#2563eb" stroke-width="2.2"/>
+              <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" stroke="#38bdf8" stroke-width="2.2"/>
+            </svg>
+            <span>ทั้งหมด</span>
+          </div>
+          <div class="kpi-value num-tabular" id="val-total-parts">0</div>
+        </div>
+      </div>
+
+      <!-- Urgent Replenishments Section -->
+      <div class="dashboard-section">
+        <div class="dashboard-section-title">
+          <span>🚨 รายการที่ต้องเติมสต๊อกด่วน</span>
+          <button id="btn-view-all-urgent" class="chip" style="font-size: 0.75rem;">ดูรายการพัสดุ ➔</button>
+        </div>
+        <div id="urgent-replenishments-container">
+          <div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px 0;">กำลังโหลดข้อมูล...</div>
+        </div>
+      </div>
+
+      <!-- Recent Movements Section -->
+      <div class="dashboard-section">
+        <div class="dashboard-section-title">
+          <span>⏱️ รายการเคลื่อนไหวล่าสุด</span>
+          <button id="btn-view-all-movements" class="chip" style="font-size: 0.75rem;">ดูประวัติทั้งหมด ➔</button>
+        </div>
+        <div id="dashboard-recent-movements-container">
+          <div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px 0;">กำลังโหลดข้อมูล...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 2: Parts Catalog -->
+    <section id="view-parts" class="app-view">
+      <div class="ledger-header">
+        <div class="ledger-title">
+          <span class="title-glowing-badge badge-amber">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2.5l8 4.6v9.8l-8 4.6-8-4.6V7.1l8-4.6z" stroke="#f59e0b" stroke-width="2.2" stroke-linejoin="round"/>
+              <path d="M12 11.7l8-4.6M12 11.7v9.8M12 11.7l-8-4.6" stroke="#fbbf24" stroke-width="1.8"/>
+            </svg>
+          </span>
+          <span>รายการพัสดุและคลังวัสดุ</span>
+        </div>
+        <button id="btn-open-create-part-view" class="chip" style="background: var(--brand-tint); color: var(--brand-primary); border-color: var(--brand-primary); font-weight: 700;">
+          + เพิ่มพัสดุใหม่
+        </button>
+      </div>
+
+      <!-- Search & Filter Box -->
+      <div class="search-filter-box">
+        <div class="search-input-wrap">
+          <input type="text" id="search-input" class="search-input" placeholder="ค้นหา Part Number, รายละเอียด..." autocomplete="off">
+          <button id="btn-clear-search" class="search-clear-btn" style="display: none;">✕</button>
+        </div>
+
+        <div class="filter-chips" id="filter-chips-container">
+          <button class="chip active" data-status="">ทั้งหมด</button>
+          <button class="chip" data-status="NEGATIVE">🚨 ติดลบ</button>
+          <button class="chip" data-status="OUT_OF_STOCK">⛔ หมดสต๊อก</button>
+          <button class="chip" data-status="LOW_STOCK">⚠️ ถึงจุดสั่งซื้อ</button>
+          <button class="chip" data-status="NORMAL">✅ ปกติ</button>
+          <button class="chip" data-status="OVER_MAX">ℹ️ ถึง Max</button>
+        </div>
+      </div>
+
+      <!-- Parts List / Loading Skeleton Container (Mobile Cards) -->
+      <div id="parts-container" class="parts-list">
+        <!-- Skeletons rendered by default -->
+        <div class="part-card skeleton" style="height: 140px;"></div>
+        <div class="part-card skeleton" style="height: 140px;"></div>
+        <div class="part-card skeleton" style="height: 140px;"></div>
+      </div>
+
+      <!-- Desktop Data Table Wrapper (>= 768px) -->
+      <div class="desktop-table-wrapper" id="desktop-table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 54px;">รูปภาพ</th>
+              <th>Part Number</th>
+              <th>รายละเอียด</th>
+              <th>ยี่ห้อ</th>
+              <th style="text-align: center;">คงเหลือ</th>
+              <th style="text-align: right;">Min / Max</th>
+              <th style="text-align: center;">สถานะ</th>
+              <th style="text-align: right;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="desktop-table-body">
+            <!-- Populated by app.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Controls Bar -->
+      <div class="pagination-bar" id="pagination-container">
+        <div style="color: var(--text-secondary);" id="pagination-info">
+          แสดง <strong>1 - 5</strong> จากทั้งหมด <strong>5</strong> รายการ
+        </div>
+        <div class="pagination-buttons">
+          <button class="btn-page" id="btn-prev-page" disabled>‹ ก่อนหน้า</button>
+          <span style="font-weight: 700; padding: 0 4px;" id="val-current-page">1</span>
+          <button class="btn-page" id="btn-next-page" disabled>ถัดไป ›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 3: Global Movement Ledger (Phase 3) -->
+    <section id="view-movements" class="app-view">
+      <div class="ledger-header">
+        <div class="ledger-title">
+          <span class="title-glowing-badge badge-fuchsia">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="8" stroke="#d946ef" stroke-width="2.2"/>
+              <polyline points="12 7 12 12 15.5 14" stroke="#d946ef" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span>บันทึกการเคลื่อนไหวสต๊อก (Movement Ledger)</span>
+        </div>
+        <button id="btn-export-movements-csv" class="btn-export-csv">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          ส่งออก Excel (.csv)
+        </button>
+      </div>
+
+      <!-- Search & Kind Filter Chips for Movements -->
+      <div class="search-filter-box">
+        <div class="search-input-wrap">
+          <input type="text" id="movement-search-input" class="search-input" placeholder="ค้นหา Part Number, เลขอ้างอิง, ผู้ทำรายการ..." autocomplete="off">
+          <button id="btn-clear-movement-search" class="search-clear-btn" style="display: none;">✕</button>
+        </div>
+        <div class="filter-chips" id="movement-filter-chips">
+          <button class="chip active" data-kind="">ทั้งหมด</button>
+          <button class="chip" data-kind="1">📥 รับเข้า</button>
+          <button class="chip" data-kind="2">📤 เบิกออก</button>
+          <button class="chip" data-kind="3">⚖️ ปรับยอด</button>
+          <button class="chip" data-kind="4">↺ ยกเลิกรายการ</button>
+        </div>
+      </div>
+
+      <!-- Mobile Movements List -->
+      <div id="movements-container" class="movements-list">
+        <!-- Rendered by app.js -->
+      </div>
+
+      <!-- Desktop Movements Data Table (>= 768px) -->
+      <div class="desktop-table-wrapper" id="desktop-movements-table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>วันเวลา</th>
+              <th style="text-align: center;">ประเภท</th>
+              <th>Part Number</th>
+              <th>รายละเอียด</th>
+              <th style="text-align: center;">จำนวน</th>
+              <th>เลขอ้างอิง</th>
+              <th>ผู้ทำรายการ</th>
+              <th>หมายเหตุ</th>
+              <th style="text-align: right;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="desktop-movements-table-body">
+            <!-- Populated by app.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Movements Pagination Controls Bar -->
+      <div class="pagination-bar" id="movements-pagination-container">
+        <div style="color: var(--text-secondary);" id="movements-pagination-info">
+          กำลังโหลดข้อมูล...
+        </div>
+        <div class="pagination-buttons">
+          <button class="btn-page" id="btn-movements-prev-page" disabled>‹ ก่อนหน้า</button>
+          <span style="font-weight: 700; padding: 0 4px;" id="val-movements-current-page">1</span>
+          <button class="btn-page" id="btn-movements-next-page" disabled>ถัดไป ›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 4: Stock Count Audit Session -->
+    <section id="view-stockcount" class="app-view">
+      <div class="ledger-header">
+        <div class="ledger-title">
+          <span class="title-glowing-badge badge-cyan">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="4.5" width="16" height="16" rx="2.5" stroke="#0ea5e9" stroke-width="2.2"/>
+              <path d="M9 3h6v2.5H9z" stroke="#0ea5e9" stroke-width="2" fill="#fff"/>
+              <path d="M8.5 13l2.5 2.5 5-5" stroke="#06b6d4" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span>ระบบตรวจนับสต๊อก (Stock Count Audit)</span>
+        </div>
+        <div class="count-view-tabs">
+          <button class="chip active" id="btn-count-subtab-active">
+            ✏️ เริ่มนับสต๊อก
+          </button>
+          <button class="chip" id="btn-count-subtab-history">
+            📜 ประวัติการตรวจนับ
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-view A: Active Counting Session -->
+      <div id="count-subview-active">
+        <!-- Session Settings Card -->
+        <div class="part-card" style="margin-bottom: 14px;">
+          <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span>ข้อมูลรอบการตรวจนับ</span>
+            <button type="button" class="btn-clear-count" id="btn-reset-count-draft" title="ล้างข้อมูลที่กำลังนับทั้งหมด">
+              🔄 ล้างแบบร่าง
+            </button>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label class="form-label" style="font-size: 0.8rem;">ชื่อรอบตรวจนับ / วัตถุประสงค์</label>
+              <input type="text" id="count-session-title" class="form-input" placeholder="เช่น ตรวจนับสต๊อกประจำเดือน..." value="ตรวจนับสต๊อกสินค้าคงคลัง">
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label class="form-label" style="font-size: 0.8rem;">ผู้ตรวจนับ <span style="color: var(--status-out);">*</span></label>
+              <input type="text" id="count-operator-name" class="form-input" placeholder="ระบุชื่อ-นามสกุล ผู้ตรวจนับ" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Progress & KPI Banner -->
+        <div class="count-progress-card">
+          <div class="count-progress-header">
+            <span style="font-weight: 600; font-size: 0.9rem;">ความคืบหน้าการตรวจนับ:</span>
+            <span class="num-tabular" style="font-weight: 700; font-size: 0.95rem;" id="count-progress-text">0/0 รายการ (0%)</span>
+          </div>
+          <div class="count-progress-track">
+            <div class="count-progress-fill" id="count-progress-bar" style="width: 0%;"></div>
+          </div>
+          <div class="count-stats-row">
+            <div class="count-stat-pill stat-counted">
+              <span class="count-stat-label">นับแล้ว</span>
+              <span class="count-stat-val num-tabular" id="stat-count-done">0</span>
+            </div>
+            <div class="count-stat-pill stat-match">
+              <span class="count-stat-label">ตรงกัน</span>
+              <span class="count-stat-val num-tabular" id="stat-count-match">0</span>
+            </div>
+            <div class="count-stat-pill stat-diff">
+              <span class="count-stat-label">ยอดต่าง</span>
+              <span class="count-stat-val num-tabular" id="stat-count-diff">0</span>
+            </div>
+            <div class="count-stat-pill stat-uncounted">
+              <span class="count-stat-label">ยังไม่นับ</span>
+              <span class="count-stat-val num-tabular" id="stat-count-pending">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="search-filter-wrapper" style="margin-top: 14px;">
+          <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="count-search-input" class="search-input" placeholder="ค้นหา Part Number, รายละเอียด หรือตำแหน่ง..." autocomplete="off">
+            <button class="btn-clear-search" id="btn-clear-count-search" style="display: none;">✕</button>
+          </div>
+          <div class="filter-chips-scroll" id="count-filter-chips">
+            <button class="chip active" data-count-filter="">ทั้งหมด</button>
+            <button class="chip" data-count-filter="PENDING">⏳ ยังไม่นับ</button>
+            <button class="chip" data-count-filter="MATCH">✅ ตรงกัน</button>
+            <button class="chip" data-count-filter="DISCREPANCY">⚠️ มียอดต่าง</button>
+          </div>
+        </div>
+
+        <!-- Mobile Count Cards Container -->
+        <div class="count-cards-list" id="count-cards-container">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Desktop Count Table Wrapper -->
+        <div class="desktop-table-wrapper" id="desktop-count-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 140px;">Part Number</th>
+                <th>รายละเอียด</th>
+                <th style="width: 90px; text-align: center;">ตำแหน่ง</th>
+                <th style="width: 100px; text-align: center;">ยอดระบบ</th>
+                <th style="width: 230px; text-align: center;">ยอดนับจริง</th>
+                <th style="width: 130px; text-align: center;">ผลต่าง</th>
+                <th style="width: 200px;">เหตุผลผลต่าง</th>
+              </tr>
+            </thead>
+            <tbody id="desktop-count-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Sticky Bottom Review Floating Action Bar -->
+        <div class="count-sticky-bar" id="count-sticky-bar">
+          <div class="count-sticky-summary">
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">สรุปการตรวจนับขณะนี้:</div>
+            <div style="font-weight: 700; font-size: 0.95rem;">
+              นับแล้ว <span class="num-tabular" id="bar-counted-qty">0</span> รายการ 
+              (<span style="color: var(--status-normal);">ตรง <span class="num-tabular" id="bar-match-qty">0</span></span>, 
+              <span style="color: var(--status-negative);">ต่าง <span class="num-tabular" id="bar-diff-qty">0</span></span>)
+            </div>
+          </div>
+          <button class="btn-action" id="btn-open-confirm-count" style="background: var(--action-count); color: #fff; width: auto; min-width: 170px; font-weight: 700;">
+            📋 ตรวจสอบและบันทึก
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-view B: Count History List -->
+      <div id="count-subview-history" style="display: none;">
+        <div id="count-history-container" class="history-session-list">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-dashboard">
+      <span class="nav-icon">
+        <svg class="nav-svg-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M3 9.5L12 2.5l9 7V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20V9.5z" stroke="#06b6d4" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M9 21.5v-6.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6.5" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="8" r="1.5" fill="#06b6d4"/>
+        </svg>
+      </span>
+      <span>หน้าหลัก</span>
+    </button>
+    <button class="nav-item" id="nav-parts">
+      <span class="nav-icon">
+        <svg class="nav-svg-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2.5l8 4.6v9.8l-8 4.6-8-4.6V7.1l8-4.6z" stroke="#f59e0b" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M12 11.7l8-4.6M12 11.7v9.8M12 11.7l-8-4.6" stroke="#fbbf24" stroke-width="1.8" stroke-linejoin="round"/>
+          <circle cx="12" cy="11.7" r="1.8" fill="#f59e0b"/>
+        </svg>
+      </span>
+      <span>รายการพัสดุ</span>
+    </button>
+    <button class="nav-item" id="nav-movements">
+      <span class="nav-icon">
+        <svg class="nav-svg-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M20 12A8 8 0 0 1 7.2 18.2L3.5 15M4 12A8 8 0 0 1 16.8 5.8L20.5 9" stroke="#d946ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="21 4.5 20.5 9 16 9" stroke="#d946ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="3 19.5 3.5 15 8 15" stroke="#d946ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span>เคลื่อนไหว</span>
+    </button>
+    <button class="nav-item" id="nav-stockcount">
+      <span class="nav-icon">
+        <svg class="nav-svg-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="4.5" y="4.5" width="15" height="16.5" rx="3" stroke="#2563eb" stroke-width="2.2"/>
+          <path d="M9 2.8h6a1 1 0 0 1 1 1v1.7H8V3.8a1 1 0 0 1 1-1z" stroke="#2563eb" stroke-width="1.8" fill="#ffffff"/>
+          <path d="M8.5 13l2.5 2.5 5-5" stroke="#3b82f6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span>เช็คสต๊อก</span>
+    </button>
+  </nav>
+
+  <!-- Bottom Sheet Modal for Movement (Receive / Issue) -->
+  <div class="modal-overlay" id="modal-movement">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <h3 class="modal-title" id="movement-modal-title">บันทึกรายการสต๊อก</h3>
+        <button class="modal-close-btn" id="btn-close-movement-modal">✕</button>
+      </div>
+
+      <form id="form-movement">
+        <input type="hidden" id="movement-part-id">
+        <input type="hidden" id="movement-kind"> <!-- 1: Receive, 2: Issue -->
+
+        <!-- Part Info Snippet -->
+        <div id="movement-part-snippet" style="background: var(--bg-app); padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 14px;">
+          <div style="font-family: var(--font-mono); font-weight: 700;" id="snippet-part-no">BEARING-6204</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);" id="snippet-desc">ตลับลูกปืนฝายาง</div>
+          <div style="margin-top: 4px; font-size: 0.82rem;">
+            ยอดปัจจุบัน: <strong class="num-tabular" id="snippet-current-qty">0</strong> <span id="snippet-unit">ชิ้น</span>
+          </div>
+        </div>
+
+        <!-- Quantity Input with Ergonomic Steppers -->
+        <div class="form-group">
+          <label class="form-label">จำนวนที่ต้องการ <span id="label-action-type">รับเข้า</span></label>
+          <div class="stepper-container">
+            <button type="button" class="btn-step" id="step-minus-10">-10</button>
+            <button type="button" class="btn-step" id="step-minus-1">-1</button>
+            <input type="number" id="movement-quantity" class="form-input num-tabular" style="text-align: center; font-size: 1.25rem; font-weight: 700;" min="1" value="1" required>
+            <button type="button" class="btn-step" id="step-plus-1">+1</button>
+            <button type="button" class="btn-step" id="step-plus-10">+10</button>
+          </div>
+        </div>
+
+        <!-- Negative Warning Box (Dynamic when issuing > current qty) -->
+        <div id="box-negative-warning" style="display: none; background: var(--status-negative-bg); border: 1px solid var(--status-negative); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 12px; font-size: 0.85rem; color: var(--status-negative);">
+          ⚠️ <strong>คำเตือนยอดติดลบ:</strong> การเบิกนี้จะทำให้ยอดคงเหลือติดลบ ระบบอนุญาตให้บันทึกได้ แต่จะขึ้นแจ้งเตือนให้เร่งรับเข้าชดเชย
+        </div>
+
+        <!-- Operator Name (with LocalStorage Memory) -->
+        <div class="form-group">
+          <label class="form-label">ชื่อผู้ทำรายการ / ผู้เบิก <span style="color: var(--status-out);">*</span></label>
+          <input type="text" id="movement-operator" class="form-input" placeholder="เช่น ช่างวิชัย หรือ สมชาย" required>
+        </div>
+
+        <!-- Reference / Job order -->
+        <div class="form-group">
+          <label class="form-label">เลขอ้างอิง / ทะเบียนงาน / แผนก</label>
+          <input type="text" id="movement-reference" class="form-input" placeholder="เช่น PO-6709-01 หรือ JOB-LINE-2">
+        </div>
+
+        <!-- Note -->
+        <div class="form-group">
+          <label class="form-label">หมายเหตุเพิ่มเติม</label>
+          <input type="text" id="movement-note" class="form-input" placeholder="ระบุเหตุผลหรือรายละเอียดเพิ่มเติม">
+        </div>
+
+        <button type="submit" class="form-submit-btn" id="btn-submit-movement" style="background: var(--brand-primary);">
+          ยืนยันการบันทึก
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet Modal for Creating New Part -->
+  <div class="modal-overlay" id="modal-create-part">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <h3 class="modal-title">เพิ่มพัสดุ / วัสดุใหม่</h3>
+        <button class="modal-close-btn" id="btn-close-create-modal">✕</button>
+      </div>
+
+      <form id="form-create-part">
+        <div class="form-group">
+          <label class="form-label">Part Number / รหัสพัสดุ <span style="color: var(--status-out);">*</span></label>
+          <input type="text" id="create-part-no" class="form-input num-tabular" placeholder="เช่น BEARING-6204 หรือ BELT-A32" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">รายละเอียดวัสดุ <span style="color: var(--status-out);">*</span></label>
+          <input type="text" id="create-desc" class="form-input" placeholder="เช่น ตลับลูกปืนฝายาง หรือ สายพานร่องวี" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ยี่ห้อ / แบรนด์</label>
+          <input type="text" id="create-brand" class="form-input" placeholder="เช่น SKF, Mitsuboshi, NSK">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">จุดสั่งซื้อ (Min) <span style="color: var(--status-out);">*</span></label>
+            <input type="number" id="create-min" class="form-input num-tabular" value="0" min="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">จุดสต๊อกสูงสุด (Max)</label>
+            <input type="number" id="create-max" class="form-input num-tabular" placeholder="ไม่บังคับ">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">หน่วยนับ</label>
+            <input type="text" id="create-unit" class="form-input" value="ชิ้น">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ตำแหน่งเก็บ (Location)</label>
+            <input type="text" id="create-location" class="form-input" placeholder="เช่น Rack A-02">
+          </div>
+        </div>
+
+        <button type="submit" class="form-submit-btn" id="btn-submit-create-part" style="background: var(--brand-primary);">
+          บันทึกพัสดุใหม่
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet Modal for Editing Part -->
+  <div class="modal-overlay" id="modal-edit-part">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <h3 class="modal-title">แก้ไขข้อมูลพัสดุ</h3>
+        <button class="modal-close-btn" id="btn-close-edit-modal">✕</button>
+      </div>
+
+      <form id="form-edit-part">
+        <input type="hidden" id="edit-part-id">
+        <input type="hidden" id="edit-part-version">
+
+        <div class="form-group">
+          <label class="form-label">Part Number (รหัสห้ามเปลี่ยน)</label>
+          <input type="text" id="edit-part-no" class="form-input num-tabular" style="background: var(--border-subtle); color: var(--text-secondary);" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">รายละเอียดวัสดุ <span style="color: var(--status-out);">*</span></label>
+          <input type="text" id="edit-desc" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ยี่ห้อ / แบรนด์</label>
+          <input type="text" id="edit-brand" class="form-input">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">จุดสั่งซื้อ (Min) <span style="color: var(--status-out);">*</span></label>
+            <input type="number" id="edit-min" class="form-input num-tabular" min="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">จุดสต๊อกสูงสุด (Max)</label>
+            <input type="number" id="edit-max" class="form-input num-tabular" placeholder="ไม่บังคับ">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">หน่วยนับ</label>
+            <input type="text" id="edit-unit" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ตำแหน่งเก็บ (Location)</label>
+            <input type="text" id="edit-location" class="form-input">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button type="button" class="btn-action" id="btn-open-image-from-edit" style="background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--border-subtle); flex: 1;">
+            📷 จัดการรูปภาพ
+          </button>
+          <button type="button" class="btn-action" id="btn-delete-part" style="background: var(--status-out-bg); color: var(--status-out); border: 1px solid var(--status-out); flex: 1;">
+            🗑️ ลบพัสดุ
+          </button>
+        </div>
+
+        <button type="submit" class="form-submit-btn" id="btn-submit-edit-part" style="background: var(--brand-primary); margin-top: 12px;">
+          บันทึกการเปลี่ยนแปลง
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for Image Upload & WebP Client-side Preview -->
+  <div class="modal-overlay" id="modal-upload-image">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <h3 class="modal-title">รูปภาพพัสดุ (ย่อ WebP อัตโนมัติ)</h3>
+        <button class="modal-close-btn" id="btn-close-image-modal">✕</button>
+      </div>
+
+      <div style="margin-bottom: 14px; font-size: 0.88rem; color: var(--text-secondary);">
+        Part: <strong class="num-tabular" id="img-part-no">BEARING-6204</strong>
+      </div>
+
+      <!-- Hidden File Input -->
+      <input type="file" id="input-file-image" accept="image/jpeg,image/png,image/webp" style="display: none;">
+
+      <!-- Dropzone -->
+      <div class="image-upload-dropzone" id="dropzone-image">
+        <div style="font-size: 2rem; margin-bottom: 6px;">📷</div>
+        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">แตะเพื่อถ่ายรูป หรือเลือกไฟล์รูปภาพ</div>
+        <div style="font-size: 0.78rem; color: var(--text-muted);">ระบบย่อและแปลงเป็น WebP (<350 KB) อัตโนมัติ</div>
+      </div>
+
+      <!-- Preview Box -->
+      <div class="image-preview-container" id="image-preview-container" style="display: none;">
+        <img id="preview-img-element" class="image-preview-img" src="" alt="พรีวิวรูปภาพ">
+        <div class="compression-stats" id="compression-stats-text">
+          <span>เดิม: 1.8 MB</span> ➔ <span>WebP: 184 KB</span>
+          <span class="compression-badge">-90%</span>
+        </div>
+        <div style="display: flex; gap: 8px; width: 100%; margin-top: 8px;">
+          <button type="button" class="btn-action" id="btn-cancel-image-upload" style="background: var(--bg-app); color: var(--text-secondary); flex: 1;">
+            ยกเลิก
+          </button>
+          <button type="button" class="btn-action" id="btn-confirm-image-upload" style="background: var(--action-receive); flex: 2;">
+            ยืนยันอัปโหลดไปยัง R2
+          </button>
+        </div>
+      </div>
+
+      <!-- Remove Current Image Button if exists -->
+      <div id="box-remove-existing-image" style="display: none; margin-top: 16px; text-align: center;">
+        <button type="button" id="btn-remove-image" class="chip" style="background: var(--status-out-bg); color: var(--status-out); border-color: var(--status-out);">
+          🗑️ ลบรูปภาพปัจจุบันออกจาก R2
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Soft Delete Confirmation Dialog Modal -->
+  <div class="modal-overlay" id="modal-confirm-delete">
+    <div class="modal-sheet" style="max-width: 420px; text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 10px;">⚠️</div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 8px;">ยืนยันการลบพัสดุ?</h3>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 20px;">
+        พัสดุ <strong id="delete-confirm-part-no"></strong> จะถูกซ่อน (Soft Delete) โดยยังคงประวัติการรับเข้า-เบิกออกย้อนหลังไว้ทั้งหมด
+      </p>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-action" id="btn-cancel-delete" style="background: var(--bg-app); color: var(--text-secondary); flex: 1;">
+          ยกเลิก
+        </button>
+        <button type="button" class="btn-action" id="btn-execute-delete" style="background: var(--status-out); flex: 1;">
+          ยืนยันลบ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Non-Destructive Movement Reversal (Phase 3) -->
+  <div class="modal-overlay" id="modal-reverse-movement">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <h3 class="modal-title" style="color: #b45309;">↺ ยกเลิกรายการเคลื่อนไหว (Reversal)</h3>
+        <button class="modal-close-btn" id="btn-close-reverse-modal">✕</button>
+      </div>
+
+      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px; font-size: 0.85rem; color: #92400e; line-height: 1.5;">
+        ⚠️ <strong>ระบบ Ledger ไม่มีการลบข้อมูลจริง:</strong><br>
+        การยกเลิกจะเป็นการสร้าง <strong>รายการชดเชยกลับทิศทาง (Compensating Transaction)</strong> แบบอัตโนมัติ เพื่อปรับปรุงยอดสต๊อกให้กลับสู่ค่าเดิม โดยคงประวัติการทำรายการเดิมไว้ 100%
+      </div>
+
+      <!-- Target Movement Summary -->
+      <div style="background: var(--bg-app); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 0.82rem; color: var(--text-secondary);">รายการเดิม:</span>
+          <span class="chip" id="rev-summary-kind">เบิกจ่าย</span>
+        </div>
+        <div style="font-weight: 700; font-family: var(--font-mono);" id="rev-summary-part-no">BEARING-6204</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);" id="rev-summary-desc">ตลับลูกปืนฝายาง</div>
+        <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem;">
+          <span>จำนวนเดิม: <strong class="num-tabular" id="rev-summary-delta">-5</strong> <span id="rev-summary-unit">ชิ้น</span></span>
+          <span>ผลที่จะเกิดขึ้น: <strong class="num-tabular" style="color: var(--action-receive);" id="rev-summary-compensation">+5</strong></span>
+        </div>
+      </div>
+
+      <form id="form-reverse-movement">
+        <input type="hidden" id="reverse-movement-id">
+
+        <div class="form-group">
+          <label class="form-label">ชื่อผู้ขอยกเลิกรายการ <span style="color: var(--status-out);">*</span></label>
+          <input type="text" id="reverse-operator" class="form-input" placeholder="เช่น ช่างวิชัย หรือ ผู้จัดการคลัง" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">เหตุผลในการยกเลิกรายการ <span style="color: var(--status-out);">*</span></label>
+          <input type="text" id="reverse-reason" class="form-input" placeholder="เช่น บันทึกจำนวนผิดพลาด หรือสั่งผิดเครื่อง" required>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 16px;">
+          <button type="button" class="btn-action" id="btn-cancel-reverse" style="background: var(--bg-app); color: var(--text-secondary); flex: 1;">
+            ยกเลิก
+          </button>
+          <button type="submit" class="btn-action" id="btn-submit-reverse" style="background: #d97706; color: #ffffff; flex: 2; font-weight: 700;">
+            ↺ ยืนยันการยกเลิกรายการ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for Part History Timeline (Phase 3) -->
+  <div class="modal-overlay" id="modal-part-history">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">ประวัติการเคลื่อนไหววัสดุ</h3>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);" id="history-part-title">BEARING-6204</div>
+        </div>
+        <button class="modal-close-btn" id="btn-close-history-modal">✕</button>
+      </div>
+
+      <div style="background: var(--bg-app); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+        <span>ยอดคงเหลือปัจจุบัน:</span>
+        <span style="font-size: 1.15rem; font-weight: 700;" class="num-tabular" id="history-part-current-qty">0</span>
+      </div>
+
+      <div class="history-timeline" id="history-timeline-container">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Stock Count Review & Final Submission -->
+  <div class="modal-overlay" id="modal-confirm-count">
+    <div class="modal-sheet" style="max-height: 90vh;">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">สรุปและยืนยันผลการตรวจนับสต๊อก</h3>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">โปรดตรวจสอบรายการที่มีผลต่างก่อนบันทึกปรับปรุงสต๊อก</div>
+        </div>
+        <button class="modal-close-btn" id="btn-close-confirm-count-modal">✕</button>
+      </div>
+
+      <div class="count-review-summary-grid">
+        <div class="review-stat-card">
+          <div class="review-stat-label">รายการที่ตรวจนับ</div>
+          <div class="review-stat-value num-tabular" id="rev-total-counted">0</div>
+        </div>
+        <div class="review-stat-card">
+          <div class="review-stat-label">ตรงกับระบบ</div>
+          <div class="review-stat-value num-tabular" style="color: var(--status-normal);" id="rev-match-count">0</div>
+        </div>
+        <div class="review-stat-card">
+          <div class="review-stat-label">มียอดต่าง (ต้องปรับยอด)</div>
+          <div class="review-stat-value num-tabular" style="color: var(--status-out);" id="rev-diff-count">0</div>
+        </div>
+        <div class="review-stat-card">
+          <div class="review-stat-label">ผลต่างสุทธิ (Net Delta)</div>
+          <div class="review-stat-value num-tabular" id="rev-net-delta">0</div>
+        </div>
+      </div>
+
+      <div class="alert-box" style="margin: 12px 0; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: 0.82rem; border-radius: var(--radius-sm); padding: 10px 12px; display: flex; gap: 8px;">
+        <span style="font-size: 1.1rem;">ℹ️</span>
+        <div>
+          ระบบจะบันทึกสร้างเอกสารตรวจนับ (Audit Session) และสร้างรายการปรับปรุงสต๊อก (Adjustment Movement) สำหรับรายการที่มียอดต่างโดยอัตโนมัติ เพื่อให้ยอดระบบเท่ากับยอดนับจริง
+        </div>
+      </div>
+
+      <div style="font-weight: 700; font-size: 0.88rem; margin: 10px 0 6px;">
+        รายการที่มียอดต่าง (<span id="rev-diff-list-count">0</span> รายการ):
+      </div>
+      <div class="count-discrepancy-preview-list" id="rev-discrepancy-list">
+        <!-- List of items with diff -->
+      </div>
+
+      <div class="form-group" style="margin-top: 12px;">
+        <label class="form-label" style="font-size: 0.82rem;">บันทึกเพิ่มเติมรอบตรวจนับ (Note)</label>
+        <input type="text" id="confirm-count-note" class="form-input" placeholder="เช่น ตรวจนับประจำเดือน คลังสินค้า A">
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button type="button" class="btn-action" id="btn-cancel-confirm-count" style="background: var(--bg-app); color: var(--text-secondary); flex: 1;">
+          กลับไปแก้ไข
+        </button>
+        <button type="button" class="btn-action" id="btn-execute-submit-count" style="background: var(--action-count); color: #ffffff; flex: 2; font-weight: 700;">
+          💾 ยืนยันและปรับยอดสต๊อก
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Stock Count Session Detail Breakdown -->
+  <div class="modal-overlay" id="modal-count-detail">
+    <div class="modal-sheet" style="max-height: 90vh;">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="detail-session-title">รายละเอียดรอบตรวจนับ</h3>
+          <div style="font-size: 0.82rem; color: var(--text-secondary);" id="detail-session-sub">#AUD-0001</div>
+        </div>
+        <button class="modal-close-btn" id="btn-close-detail-modal">✕</button>
+      </div>
+
+      <div class="count-review-summary-grid" style="margin-bottom: 12px;">
+        <div class="review-stat-card">
+          <div class="review-stat-label">ผู้ตรวจนับ</div>
+          <div class="review-stat-value" style="font-size: 0.92rem; font-weight: 600;" id="detail-operator">-</div>
+        </div>
+        <div class="review-stat-card">
+          <div class="review-stat-label">วันที่ตรวจนับ</div>
+          <div class="review-stat-value" style="font-size: 0.82rem; font-weight: 600;" id="detail-created-at">-</div>
+        </div>
+        <div class="review-stat-card">
+          <div class="review-stat-label">รายการที่ตรวจ</div>
+          <div class="review-stat-value num-tabular" id="detail-total-lines">0</div>
+        </div>
+        <div class="review-stat-card">
+          <div class="review-stat-label">รายการมียอดต่าง</div>
+          <div class="review-stat-value num-tabular" style="color: var(--status-out);" id="detail-diff-lines">0</div>
+        </div>
+      </div>
+
+      <div style="font-weight: 700; font-size: 0.88rem; margin: 10px 0 6px;">
+        รายการวัสดุในรอบตรวจนับนี้:
+      </div>
+      <div class="count-lines-detail-list" id="detail-lines-container">
+        <!-- Lines breakdown -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stock",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-18",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "stock-management",
+      "database_id": "a743b80d-ed39-49cb-a51c-a0977a104b0a"
+    }
+  ]
+}
