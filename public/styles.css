@@ -460,9 +460,22 @@ body {
   font-weight: 600;
   color: var(--text-secondary);
   background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
   padding: 2px 8px;
   border-radius: 4px;
-  margin-top: 2px;
+}
+
+.part-location-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0369a1;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .part-desc {

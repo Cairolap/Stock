@@ -335,18 +335,21 @@ function renderDualViews() {
   partsContainer.innerHTML = state.parts.map(part => {
     const config = part.status_config || {};
     const replenishText = part.recommended_replenish ? `เติม +${formatTabularNumber(part.recommended_replenish)}` : '';
-    const imgUrl = part.image_key ? `/api/parts/${part.id}/image` : null;
+    const imgUrl = part.image_key ? `/api/parts/${part.id}/image?v=${part.version || ''}` : null;
 
     return `
       <div class="part-card" data-part-id="${part.id}">
         <div class="part-card-header">
           <div style="display: flex; gap: 10px; align-items: center;">
             <div class="part-thumb" data-part-id="${part.id}" title="จัดการรูปภาพ">
-              ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}">` : '📦'}
+              ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">` : '📦'}
             </div>
             <div>
               <div class="part-no-title" style="cursor: pointer;" data-action="edit" data-part-id="${part.id}">${escapeHtml(part.part_no)}</div>
-              ${part.brand_name ? `<span class="part-brand-tag">${escapeHtml(part.brand_name)}</span>` : ''}
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px;">
+                ${part.brand_name ? `<span class="part-brand-tag">${escapeHtml(part.brand_name)}</span>` : ''}
+                ${part.location ? `<span class="part-location-tag">📍 ${escapeHtml(part.location)}</span>` : ''}
+              </div>
             </div>
           </div>
           <span class="badge ${config.badgeClass || 'badge-normal'}">
@@ -403,13 +406,13 @@ function renderDualViews() {
   desktopTableBody.innerHTML = state.parts.map(part => {
     const config = part.status_config || {};
     const replenishText = part.recommended_replenish ? `<span style="font-size: 0.78rem; font-weight:700; color: var(--status-low);">+${formatTabularNumber(part.recommended_replenish)}</span>` : '';
-    const imgUrl = part.image_key ? `/api/parts/${part.id}/image` : null;
+    const imgUrl = part.image_key ? `/api/parts/${part.id}/image?v=${part.version || ''}` : null;
 
     return `
       <tr data-part-id="${part.id}">
         <td>
           <div class="part-thumb" data-part-id="${part.id}" title="แตะเพื่อเปลี่ยนรูปภาพ">
-            ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}">` : '📦'}
+            ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">` : '📦'}
           </div>
         </td>
         <td>

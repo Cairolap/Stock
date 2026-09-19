@@ -558,9 +558,16 @@ export default {
             // 2) Fallback to D1 part_images table (SQLite BLOB)
             const imgRow = await env.DB.prepare(`SELECT mime_type, data FROM part_images WHERE part_id = ?`).bind(partId).first();
             if (imgRow && imgRow.data) {
-              return new Response(imgRow.data, {
+              const bodyBytes = Array.isArray(imgRow.data)
+                ? new Uint8Array(imgRow.data)
+                : (imgRow.data instanceof ArrayBuffer || imgRow.data instanceof Uint8Array
+                    ? imgRow.data
+                    : new Uint8Array(imgRow.data));
+
+              return new Response(bodyBytes, {
                 headers: {
                   'Content-Type': imgRow.mime_type || 'image/webp',
+                  'Content-Length': String(bodyBytes.byteLength || bodyBytes.length),
                   'Cache-Control': 'public, max-age=86400'
                 }
               });
