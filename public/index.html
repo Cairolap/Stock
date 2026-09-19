@@ -564,6 +564,25 @@
             <label class="form-label">ตำแหน่งเก็บ (Location)</label>
             <input type="text" id="create-location" class="form-input" placeholder="เช่น Rack A-02">
           </div>
+        <div class="form-group" style="margin-top: 4px;">
+          <label class="form-label">รูปภาพพัสดุ (ไม่บังคับ - ย่อ WebP อัตโนมัติ)</label>
+          <input type="file" id="create-part-file-image" accept="image/jpeg,image/png,image/webp" style="display: none;">
+          
+          <div class="create-image-dropzone" id="create-dropzone-image">
+            <div style="font-size: 1.5rem; margin-bottom: 2px;">📷</div>
+            <div style="font-weight: 600; font-size: 0.84rem; color: var(--text-primary);">แตะเพื่อเลือกรูป / ถ่ายรูปจากกล้อง หรือลากไฟล์มาวาง</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">รองรับ JPG, PNG, WebP (หรือกด Ctrl+V เพื่อวางรูป)</div>
+          </div>
+
+          <div class="create-image-preview" id="create-image-preview" style="display: none;">
+            <img id="create-preview-img" src="" alt="พรีวิวรูปพัสดุใหม่">
+            <div class="create-image-meta">
+              <div id="create-img-stats" style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;"></div>
+              <button type="button" id="btn-remove-create-img" class="chip" style="background: #fee2e2; color: #e11d48; border-color: #fca5a5; font-size: 0.74rem; padding: 2px 8px; margin-top: 4px;">
+                ✕ ลบรูปนี้ออก
+              </button>
+            </div>
+          </div>
         </div>
 
         <button type="submit" class="form-submit-btn" id="btn-submit-create-part" style="background: var(--brand-primary);">

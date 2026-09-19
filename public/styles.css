@@ -1049,6 +1049,49 @@ body {
   padding: 2px 8px;
   border-radius: var(--radius-full);
   font-size: 0.75rem;
+/* Image upload widget inside Create Part modal */
+.create-image-dropzone {
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  text-align: center;
+  background: var(--bg-app);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.create-image-dropzone:hover,
+.create-image-dropzone.drag-active {
+  border-color: var(--brand-primary);
+  background: var(--brand-tint);
+}
+
+.create-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.create-image-preview img {
+  width: 58px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.create-image-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
 }
 
 /* Pagination Controls */

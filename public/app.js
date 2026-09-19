@@ -28,6 +28,7 @@ const state = {
   selectedActionPart: null,
   activeMovementKind: 1, // 1: Receive, 2: Issue
   stagedImageBlob: null,
+  createPartImageBlob: null,
 
   // Phase 3: Movement Ledger & Reversals
   movements: [],
@@ -94,6 +95,12 @@ const modalCreatePart = document.getElementById('modal-create-part');
 const formCreatePart = document.getElementById('form-create-part');
 const btnOpenCreatePart = document.getElementById('btn-open-create-part');
 const btnCloseCreateModal = document.getElementById('btn-close-create-modal');
+const createPartFileImage = document.getElementById('create-part-file-image');
+const createDropzoneImage = document.getElementById('create-dropzone-image');
+const createImagePreview = document.getElementById('create-image-preview');
+const createPreviewImg = document.getElementById('create-preview-img');
+const createImgStats = document.getElementById('create-img-stats');
+const btnRemoveCreateImg = document.getElementById('btn-remove-create-img');
 
 // Edit Part Modal
 const modalEditPart = document.getElementById('modal-edit-part');
@@ -976,15 +983,27 @@ dropzoneImage.addEventListener('drop', e => {
 
 // Clipboard Paste (Ctrl+V) Support
 window.addEventListener('paste', e => {
-  if (!modalUploadImage.classList.contains('open')) return;
   const items = e.clipboardData?.items;
   if (!items) return;
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type && items[i].type.startsWith('image/')) {
-      const file = items[i].getAsFile();
-      if (file) {
-        processSelectedImageFile(file);
-        break;
+
+  if (modalUploadImage.classList.contains('open')) {
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type && items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          processSelectedImageFile(file);
+          break;
+        }
+      }
+    }
+  } else if (modalCreatePart.classList.contains('open')) {
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type && items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          processCreatePartImageFile(file);
+          break;
+        }
       }
     }
   }
@@ -1090,11 +1109,97 @@ btnExecuteDelete.onclick = async () => {
  */
 function openCreatePartModal() {
   formCreatePart.reset();
+  state.createPartImageBlob = null;
+  if (createPartFileImage) createPartFileImage.value = '';
+  if (createImagePreview) createImagePreview.style.display = 'none';
+  if (createDropzoneImage) {
+    createDropzoneImage.style.display = 'block';
+    createDropzoneImage.innerHTML = `
+      <div style="font-size: 1.5rem; margin-bottom: 2px;">📷</div>
+      <div style="font-weight: 600; font-size: 0.84rem; color: var(--text-primary);">แตะเพื่อเลือกรูป / ถ่ายรูปจากกล้อง หรือลากไฟล์มาวาง</div>
+      <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">รองรับ JPG, PNG, WebP (หรือกด Ctrl+V เพื่อวางรูป)</div>
+    `;
+  }
   modalCreatePart.classList.add('open');
 }
 
 function closeCreatePartModal() {
   modalCreatePart.classList.remove('open');
+  state.createPartImageBlob = null;
+}
+
+async function processCreatePartImageFile(file) {
+  if (!file) return;
+  if (!file.type || !file.type.startsWith('image/')) {
+    showToast('กรุณาเลือกไฟล์รูปภาพ (JPG, PNG, WebP)', 'error');
+    return;
+  }
+
+  try {
+    if (createDropzoneImage) createDropzoneImage.innerHTML = `<div>⏳ กำลังย่อรูปภาพ...</div>`;
+    const result = await compressImageToWebP(file);
+    state.createPartImageBlob = result.blob;
+
+    if (createPreviewImg) createPreviewImg.src = result.dataUrl;
+    if (createImgStats) {
+      createImgStats.innerHTML = `
+        <span>WebP: ${formatBytes(result.compressedSize)}</span>
+        ${result.reductionPercent > 0 ? `<span class="compression-badge" style="margin-left: 4px;">ประหยัด -${result.reductionPercent}%</span>` : ''}
+      `;
+    }
+
+    if (createDropzoneImage) createDropzoneImage.style.display = 'none';
+    if (createImagePreview) createImagePreview.style.display = 'flex';
+  } catch (err) {
+    showToast(err.message || 'ไม่สามารถย่อรูปภาพได้', 'error');
+  } finally {
+    if (createDropzoneImage) {
+      createDropzoneImage.innerHTML = `
+        <div style="font-size: 1.5rem; margin-bottom: 2px;">📷</div>
+        <div style="font-weight: 600; font-size: 0.84rem; color: var(--text-primary);">แตะเพื่อเลือกรูป / ถ่ายรูปจากกล้อง หรือลากไฟล์มาวาง</div>
+        <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">รองรับ JPG, PNG, WebP (หรือกด Ctrl+V เพื่อวางรูป)</div>
+      `;
+    }
+  }
+}
+
+if (createDropzoneImage) {
+  createDropzoneImage.onclick = () => createPartFileImage?.click();
+
+  createDropzoneImage.addEventListener('dragenter', e => {
+    e.preventDefault();
+    createDropzoneImage.classList.add('drag-active');
+  });
+  createDropzoneImage.addEventListener('dragover', e => {
+    e.preventDefault();
+    createDropzoneImage.classList.add('drag-active');
+  });
+  createDropzoneImage.addEventListener('dragleave', e => {
+    e.preventDefault();
+    createDropzoneImage.classList.remove('drag-active');
+  });
+  createDropzoneImage.addEventListener('drop', e => {
+    e.preventDefault();
+    createDropzoneImage.classList.remove('drag-active');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) processCreatePartImageFile(file);
+  });
+}
+
+if (createPartFileImage) {
+  createPartFileImage.onchange = () => {
+    const file = createPartFileImage.files?.[0];
+    if (file) processCreatePartImageFile(file);
+  };
+}
+
+if (btnRemoveCreateImg) {
+  btnRemoveCreateImg.onclick = () => {
+    state.createPartImageBlob = null;
+    if (createPartFileImage) createPartFileImage.value = '';
+    if (createImagePreview) createImagePreview.style.display = 'none';
+    if (createDropzoneImage) createDropzoneImage.style.display = 'block';
+  };
 }
 
 // Stepper Button Listeners
@@ -1260,6 +1365,19 @@ formCreatePart.onsubmit = async (e) => {
     const json = await res.json();
     if (!res.ok || !json.success) {
       throw new Error(json.error?.message || 'ไม่สามารถเพิ่มวัสดุได้');
+    }
+
+    if (state.createPartImageBlob && json.data?.id) {
+      btn.textContent = 'กำลังบันทึกรูปภาพ...';
+      try {
+        await fetch(`/api/parts/${json.data.id}/image`, {
+          method: 'PUT',
+          headers: { 'Content-Type': state.createPartImageBlob.type || 'image/webp' },
+          body: state.createPartImageBlob
+        });
+      } catch (imgErr) {
+        console.warn('Image upload error:', imgErr);
+      }
     }
 
     closeCreatePartModal();
