@@ -539,53 +539,91 @@ export default {
         if (subAction === 'image') {
           if (method === 'GET') {
             const part = await env.DB.prepare(`SELECT image_key FROM parts WHERE id = ?`).bind(partId).first();
-            if (!part || !part.image_key || !env.IMAGES_BUCKET) {
+            if (!part || !part.image_key) {
               return new Response(null, { status: 404 });
             }
-            const object = await env.IMAGES_BUCKET.get(part.image_key);
-            if (!object) return new Response(null, { status: 404 });
 
-            const headers = new Headers();
-            object.writeHttpMetadata(headers);
-            headers.set('etag', object.httpEtag);
-            headers.set('Cache-Control', 'public, max-age=86400');
-            return new Response(object.body, { headers });
+            // 1) If in R2
+            if (env.IMAGES_BUCKET && !part.image_key.startsWith('d1:')) {
+              const object = await env.IMAGES_BUCKET.get(part.image_key);
+              if (object) {
+                const headers = new Headers();
+                object.writeHttpMetadata(headers);
+                headers.set('etag', object.httpEtag);
+                headers.set('Cache-Control', 'public, max-age=86400');
+                return new Response(object.body, { headers });
+              }
+            }
+
+            // 2) Fallback to D1 part_images table (SQLite BLOB)
+            const imgRow = await env.DB.prepare(`SELECT mime_type, data FROM part_images WHERE part_id = ?`).bind(partId).first();
+            if (imgRow && imgRow.data) {
+              return new Response(imgRow.data, {
+                headers: {
+                  'Content-Type': imgRow.mime_type || 'image/webp',
+                  'Cache-Control': 'public, max-age=86400'
+                }
+              });
+            }
+
+            return new Response(null, { status: 404 });
           }
 
           if (method === 'PUT') {
-            if (!env.IMAGES_BUCKET) {
-              return errorJson('R2_UNAVAILABLE', 'R2 Storage Bucket binding not configured', 500);
-            }
             const blob = await request.arrayBuffer();
             if (!blob || blob.byteLength === 0) {
               return errorJson('EMPTY_IMAGE', 'ไฟล์รูปภาพว่างเปล่า', 400);
             }
-            if (blob.byteLength > 500 * 1024) {
-              return errorJson('IMAGE_TOO_LARGE', 'รูปภาพต้องไม่เกิน 500 KB หลังย่อขนาด', 400);
+            if (blob.byteLength > 600 * 1024) {
+              return errorJson('IMAGE_TOO_LARGE', 'รูปภาพต้องไม่เกิน 600 KB หลังย่อขนาด', 400);
             }
 
-            const newKey = `parts/${partId}-${Date.now()}.webp`;
-            await env.IMAGES_BUCKET.put(newKey, blob, {
-              httpMetadata: { contentType: 'image/webp' }
-            });
+            const contentType = request.headers.get('Content-Type') || 'image/webp';
+            const now = Math.floor(Date.now() / 1000);
 
-            // Get old image key to delete
-            const currentPart = await env.DB.prepare(`SELECT image_key FROM parts WHERE id = ?`).bind(partId).first();
+            // If R2 Storage Bucket is available, save to R2
+            if (env.IMAGES_BUCKET) {
+              const newKey = `parts/${partId}-${Date.now()}.webp`;
+              await env.IMAGES_BUCKET.put(newKey, blob, {
+                httpMetadata: { contentType }
+              });
+
+              const currentPart = await env.DB.prepare(`SELECT image_key FROM parts WHERE id = ?`).bind(partId).first();
+              await env.DB.prepare(`UPDATE parts SET image_key = ?, updated_at = ? WHERE id = ?`)
+                .bind(newKey, now, partId).run();
+
+              if (currentPart?.image_key && !currentPart.image_key.startsWith('d1:')) {
+                ctx.waitUntil(env.IMAGES_BUCKET.delete(currentPart.image_key).catch(() => {}));
+              }
+
+              return json({ success: true, data: { image_key: newKey, storage: 'R2' } });
+            }
+
+            // Fallback: Save to Cloudflare D1 (SQLite BLOB storage)
+            const d1Key = `d1:parts/${partId}`;
+            await env.DB.prepare(`
+              INSERT INTO part_images (part_id, mime_type, data, updated_at)
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT(part_id) DO UPDATE SET
+                mime_type = excluded.mime_type,
+                data = excluded.data,
+                updated_at = excluded.updated_at
+            `).bind(partId, contentType, new Uint8Array(blob), now).run();
+
             await env.DB.prepare(`UPDATE parts SET image_key = ?, updated_at = ? WHERE id = ?`)
-              .bind(newKey, Math.floor(Date.now() / 1000), partId).run();
+              .bind(d1Key, now, partId).run();
 
-            if (currentPart?.image_key) {
-              ctx.waitUntil(env.IMAGES_BUCKET.delete(currentPart.image_key).catch(() => {}));
-            }
-
-            return json({ success: true, data: { image_key: newKey } });
+            return json({ success: true, data: { image_key: d1Key, storage: 'D1' } });
           }
 
           // DELETE /api/parts/:id/image
           if (method === 'DELETE') {
             const part = await env.DB.prepare(`SELECT image_key FROM parts WHERE id = ?`).bind(partId).first();
-            if (part?.image_key && env.IMAGES_BUCKET) {
-              ctx.waitUntil(env.IMAGES_BUCKET.delete(part.image_key).catch(() => {}));
+            if (part?.image_key) {
+              if (env.IMAGES_BUCKET && !part.image_key.startsWith('d1:')) {
+                ctx.waitUntil(env.IMAGES_BUCKET.delete(part.image_key).catch(() => {}));
+              }
+              await env.DB.prepare(`DELETE FROM part_images WHERE part_id = ?`).bind(partId).run();
             }
             await env.DB.prepare(`UPDATE parts SET image_key = NULL, updated_at = ? WHERE id = ?`)
               .bind(Math.floor(Date.now() / 1000), partId).run();

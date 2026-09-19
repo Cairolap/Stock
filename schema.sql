@@ -91,3 +91,15 @@ BEGIN
       updated_at = NEW.created_at
   WHERE id = NEW.part_id;
 END;
+
+-- ==========================================================
+-- Part Images: Embedded Storage Fallback (D1 / SQLite BLOB)
+-- Used when R2 bucket binding is not yet enabled on Cloudflare account
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS part_images (
+  part_id INTEGER PRIMARY KEY REFERENCES parts(id) ON DELETE CASCADE,
+  mime_type TEXT NOT NULL DEFAULT 'image/webp',
+  data BLOB NOT NULL,
+  updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+);
+

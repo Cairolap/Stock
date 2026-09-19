@@ -57,17 +57,29 @@ export async function compressImageToWebP(file, options = {}) {
     blob = await canvasToBlob(canvas, 'image/webp', quality);
   }
 
-  const dataUrl = canvas.toDataURL('image/webp', quality);
-  const reductionPercent = Math.round(((file.size - blob.size) / file.size) * 100);
+  let finalBlob = blob;
+  let finalDataUrl = canvas.toDataURL('image/webp', quality);
+  let isOriginalKept = false;
+  let reductionPercent = Math.round(((file.size - blob.size) / file.size) * 100);
+
+  // If re-encoding to WebP made the file larger than original,
+  // and original is already within target budget (<= 350 KB), keep original
+  if (blob.size >= file.size && file.size <= targetBytes) {
+    finalBlob = file;
+    finalDataUrl = img.src; // original data URL
+    isOriginalKept = true;
+    reductionPercent = 0;
+  }
 
   return {
-    blob,
-    dataUrl,
+    blob: finalBlob,
+    dataUrl: finalDataUrl,
     originalSize: file.size,
-    compressedSize: blob.size,
+    compressedSize: finalBlob.size,
     width,
     height,
-    reductionPercent: Math.max(0, reductionPercent)
+    reductionPercent: Math.max(0, reductionPercent),
+    isOriginalKept
   };
 }
 

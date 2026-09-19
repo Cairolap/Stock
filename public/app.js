@@ -738,11 +738,18 @@ inputFileImage.onchange = async () => {
     state.stagedImageBlob = result.blob;
 
     previewImgElement.src = result.dataUrl;
-    compressionStatsText.innerHTML = `
-      <span>ต้นฉบับ: ${formatBytes(result.originalSize)}</span> ➔
-      <span>WebP: ${formatBytes(result.compressedSize)}</span>
-      <span class="compression-badge">-${result.reductionPercent}%</span>
-    `;
+    if (result.reductionPercent > 0) {
+      compressionStatsText.innerHTML = `
+        <span>ต้นฉบับ: ${formatBytes(result.originalSize)}</span> ➔
+        <span>WebP: ${formatBytes(result.compressedSize)}</span>
+        <span class="compression-badge">ประหยัด -${result.reductionPercent}%</span>
+      `;
+    } else {
+      compressionStatsText.innerHTML = `
+        <span>ขนาดไฟล์: ${formatBytes(result.compressedSize)}</span>
+        <span class="compression-badge" style="background: #e0f2fe; color: #0369a1;">ขนาดกะทัดรัดอยู่แล้ว (&lt; 350 KB)</span>
+      `;
+    }
 
     dropzoneImage.style.display = 'none';
     imagePreviewContainer.style.display = 'flex';
@@ -764,17 +771,17 @@ btnCancelImageUpload.onclick = () => {
   inputFileImage.value = '';
 };
 
-// Confirm Image Upload to R2
+// Confirm Image Upload
 btnConfirmImageUpload.onclick = async () => {
   if (!state.selectedPart || !state.stagedImageBlob) return;
 
   btnConfirmImageUpload.disabled = true;
-  btnConfirmImageUpload.textContent = 'กำลังอัปโหลด...';
+  btnConfirmImageUpload.textContent = 'กำลังบันทึกรูปภาพ...';
 
   try {
     const res = await fetch(`/api/parts/${state.selectedPart.id}/image`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'image/webp' },
+      headers: { 'Content-Type': state.stagedImageBlob.type || 'image/webp' },
       body: state.stagedImageBlob
     });
 
@@ -784,13 +791,13 @@ btnConfirmImageUpload.onclick = async () => {
     }
 
     closeImageUploadModal();
-    showToast(`อัปโหลดรูปภาพ ${state.selectedPart.part_no} ไปยัง R2 สำเร็จ`, 'success');
+    showToast(`บันทึกรูปภาพ ${state.selectedPart.part_no} สำเร็จ`, 'success');
     loadParts();
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
     btnConfirmImageUpload.disabled = false;
-    btnConfirmImageUpload.textContent = 'ยืนยันอัปโหลดไปยัง R2';
+    btnConfirmImageUpload.textContent = 'ยืนยันบันทึกรูปภาพ';
   }
 };
 
