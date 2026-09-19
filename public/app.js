@@ -728,12 +728,15 @@ function closeImageUploadModal() {
 
 dropzoneImage.onclick = () => inputFileImage.click();
 
-inputFileImage.onchange = async () => {
-  const file = inputFileImage.files?.[0];
+async function processSelectedImageFile(file) {
   if (!file) return;
+  if (!file.type || !file.type.startsWith('image/')) {
+    showToast('กรุณาเลือกไฟล์รูปภาพ (JPG, PNG, WebP)', 'error');
+    return;
+  }
 
   try {
-    dropzoneImage.innerHTML = `<div>⏳ กำลังย่อและแปลงเป็น WebP...</div>`;
+    dropzoneImage.innerHTML = `<div>⏳ กำลังประมวลผลและย่อรูปภาพ...</div>`;
     const result = await compressImageToWebP(file);
     state.stagedImageBlob = result.blob;
 
@@ -757,12 +760,67 @@ inputFileImage.onchange = async () => {
     showToast(err.message || 'ไม่สามารถย่อรูปภาพได้', 'error');
   } finally {
     dropzoneImage.innerHTML = `
-      <div style="font-size: 2rem; margin-bottom: 6px;">📷</div>
-      <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">แตะเพื่อถ่ายรูป หรือเลือกไฟล์รูปภาพ</div>
-      <div style="font-size: 0.78rem; color: var(--text-muted);">ระบบย่อและแปลงเป็น WebP (&lt;350 KB) อัตโนมัติ</div>
+      <div style="font-size: 2.2rem; margin-bottom: 6px;">📷</div>
+      <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">ลากไฟล์รูปภาพมาวางที่นี่</div>
+      <div style="font-size: 0.82rem; color: var(--brand-primary); font-weight: 500; margin-bottom: 2px;">หรือแตะเพื่อเลือกไฟล์ / ถ่ายรูปจากกล้อง</div>
+      <div style="font-size: 0.76rem; color: var(--text-muted);">รองรับ JPG, PNG, WebP (สามารถกด Ctrl+V เพื่อวางรูปได้)</div>
     `;
   }
+}
+
+inputFileImage.onchange = () => {
+  const file = inputFileImage.files?.[0];
+  if (file) processSelectedImageFile(file);
 };
+
+// Drag and Drop Event Listeners
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+  window.addEventListener(eventName, e => {
+    if (modalUploadImage.classList.contains('open')) {
+      e.preventDefault();
+    }
+  }, false);
+});
+
+dropzoneImage.addEventListener('dragenter', e => {
+  e.preventDefault();
+  dropzoneImage.classList.add('drag-active');
+});
+
+dropzoneImage.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzoneImage.classList.add('drag-active');
+});
+
+dropzoneImage.addEventListener('dragleave', e => {
+  e.preventDefault();
+  dropzoneImage.classList.remove('drag-active');
+});
+
+dropzoneImage.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzoneImage.classList.remove('drag-active');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    processSelectedImageFile(file);
+  }
+});
+
+// Clipboard Paste (Ctrl+V) Support
+window.addEventListener('paste', e => {
+  if (!modalUploadImage.classList.contains('open')) return;
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type && items[i].type.startsWith('image/')) {
+      const file = items[i].getAsFile();
+      if (file) {
+        processSelectedImageFile(file);
+        break;
+      }
+    }
+  }
+});
 
 btnCancelImageUpload.onclick = () => {
   state.stagedImageBlob = null;
