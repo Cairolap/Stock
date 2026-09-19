@@ -105,6 +105,18 @@ const btnConfirmImageUpload = document.getElementById('btn-confirm-image-upload'
 const boxRemoveExistingImage = document.getElementById('box-remove-existing-image');
 const btnRemoveImage = document.getElementById('btn-remove-image');
 
+// Image Lightbox & Zoom Modal
+const modalLightbox = document.getElementById('modal-lightbox');
+const lightboxPartNo = document.getElementById('lightbox-part-no');
+const lightboxBrandTag = document.getElementById('lightbox-brand-tag');
+const lightboxLocationTag = document.getElementById('lightbox-location-tag');
+const lightboxDesc = document.getElementById('lightbox-desc');
+const lightboxImg = document.getElementById('lightbox-img');
+const btnCloseLightbox = document.getElementById('btn-close-lightbox');
+const btnLightboxChange = document.getElementById('btn-lightbox-change');
+const btnLightboxDelete = document.getElementById('btn-lightbox-delete');
+const btnLightboxDone = document.getElementById('btn-lightbox-done');
+
 // Delete Confirmation Modal
 const modalConfirmDelete = document.getElementById('modal-confirm-delete');
 const deleteConfirmPartNo = document.getElementById('delete-confirm-part-no');
@@ -341,7 +353,7 @@ function renderDualViews() {
       <div class="part-card" data-part-id="${part.id}">
         <div class="part-card-header">
           <div style="display: flex; gap: 10px; align-items: center;">
-            <div class="part-thumb" data-part-id="${part.id}" title="จัดการรูปภาพ">
+            <div class="part-thumb" data-part-id="${part.id}" title="${imgUrl ? 'แตะเพื่อดูภาพขนาดเต็ม / จัดการรูปภาพ' : 'แตะเพื่อเพิ่มรูปภาพ'}">
               ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">` : '📦'}
             </div>
             <div>
@@ -411,7 +423,7 @@ function renderDualViews() {
     return `
       <tr data-part-id="${part.id}">
         <td>
-          <div class="part-thumb" data-part-id="${part.id}" title="แตะเพื่อเปลี่ยนรูปภาพ">
+          <div class="part-thumb" data-part-id="${part.id}" title="${imgUrl ? 'แตะเพื่อดูภาพขนาดเต็ม / จัดการรูปภาพ' : 'แตะเพื่อเพิ่มรูปภาพ'}">
             ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">` : '📦'}
           </div>
         </td>
@@ -503,13 +515,19 @@ function attachActionListeners() {
     };
   });
 
-  // Thumbnail triggers
+  // Thumbnail triggers: smart route to Lightbox or Upload
   document.querySelectorAll('.part-thumb').forEach(el => {
     el.onclick = (e) => {
       e.stopPropagation();
       const partId = parseInt(el.getAttribute('data-part-id'), 10);
       const part = state.parts.find(p => p.id === partId);
-      if (part) openImageUploadModal(part);
+      if (!part) return;
+
+      if (part.image_key) {
+        openImageLightbox(part);
+      } else {
+        openImageUploadModal(part);
+      }
     };
   });
 }
@@ -702,6 +720,91 @@ btnDeletePart.onclick = () => {
     openDeleteConfirmModal(state.selectedPart);
   }
 };
+
+/**
+ * Image Lightbox & Zoom Viewer Modal
+ */
+function openImageLightbox(part) {
+  state.selectedPart = part;
+
+  lightboxPartNo.textContent = part.part_no;
+  lightboxDesc.textContent = part.description || '-';
+
+  if (part.brand_name) {
+    lightboxBrandTag.textContent = part.brand_name;
+    lightboxBrandTag.style.display = 'inline-block';
+  } else {
+    lightboxBrandTag.style.display = 'none';
+  }
+
+  if (part.location) {
+    lightboxLocationTag.textContent = `📍 ${part.location}`;
+    lightboxLocationTag.style.display = 'inline-flex';
+  } else {
+    lightboxLocationTag.style.display = 'none';
+  }
+
+  lightboxImg.src = `/api/parts/${part.id}/image?v=${part.version || ''}&t=${Date.now()}`;
+  lightboxImg.alt = part.part_no;
+  lightboxImg.classList.remove('zoomed');
+
+  modalLightbox.classList.add('open');
+}
+
+function closeImageLightbox() {
+  modalLightbox.classList.remove('open');
+  lightboxImg.classList.remove('zoomed');
+}
+
+if (btnCloseLightbox) btnCloseLightbox.onclick = closeImageLightbox;
+if (btnLightboxDone) btnLightboxDone.onclick = closeImageLightbox;
+
+if (modalLightbox) {
+  modalLightbox.onclick = (e) => {
+    if (e.target === modalLightbox) closeImageLightbox();
+  };
+}
+
+if (lightboxImg) {
+  lightboxImg.onclick = () => {
+    lightboxImg.classList.toggle('zoomed');
+  };
+}
+
+if (btnLightboxChange) {
+  btnLightboxChange.onclick = () => {
+    if (!state.selectedPart) return;
+    closeImageLightbox();
+    openImageUploadModal(state.selectedPart);
+  };
+}
+
+if (btnLightboxDelete) {
+  btnLightboxDelete.onclick = async () => {
+    if (!state.selectedPart) return;
+    if (!confirm(`คุณต้องการลบรูปภาพของ ${state.selectedPart.part_no} ใช่หรือไม่?`)) return;
+
+    try {
+      const res = await fetch(`/api/parts/${state.selectedPart.id}/image`, {
+        method: 'DELETE'
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error?.message || 'ลบรูปภาพไม่สำเร็จ');
+
+      closeImageLightbox();
+      showToast(`ลบรูปภาพของ ${state.selectedPart.part_no} เรียบร้อยแล้ว`, 'info');
+      loadParts();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalLightbox?.classList.contains('open')) {
+    closeImageLightbox();
+  }
+});
 
 /**
  * Image Upload & WebP Client-side Compression Modal

@@ -631,6 +631,41 @@
     </div>
   </div>
 
+  <!-- Modal for Fullscreen Image Lightbox & Zoom Viewer -->
+  <div class="modal-overlay lightbox-overlay" id="modal-lightbox">
+    <div class="lightbox-dialog">
+      <div class="lightbox-header">
+        <div class="lightbox-info">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <h3 class="lightbox-part-no" id="lightbox-part-no"></h3>
+            <span class="part-brand-tag" id="lightbox-brand-tag" style="display: none;"></span>
+            <span class="part-location-tag" id="lightbox-location-tag" style="display: none;"></span>
+          </div>
+          <div class="lightbox-desc" id="lightbox-desc"></div>
+        </div>
+        <button class="lightbox-close-btn" id="btn-close-lightbox" title="ปิดหน้าต่าง">✕</button>
+      </div>
+
+      <div class="lightbox-body">
+        <div class="lightbox-stage" id="lightbox-stage">
+          <img id="lightbox-img" src="" alt="ภาพพัสดุขนาดเต็ม" class="lightbox-img" title="แตะ/คลิกเพื่อซูมขยายภาพ">
+        </div>
+      </div>
+
+      <div class="lightbox-footer">
+        <button type="button" class="btn-action" id="btn-lightbox-change" style="background: var(--brand-tint); color: var(--brand-primary); border: 1px solid var(--brand-primary); flex: 1.2;">
+          🔄 เปลี่ยนรูปภาพ
+        </button>
+        <button type="button" class="btn-action" id="btn-lightbox-delete" style="background: var(--status-out-bg); color: var(--status-out); border: 1px solid var(--status-out); flex: 1;">
+          🗑️ ลบรูป
+        </button>
+        <button type="button" class="btn-action" id="btn-lightbox-done" style="background: var(--brand-primary); color: #fff; flex: 1;">
+          ปิด
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal for Image Upload & WebP Client-side Preview -->
   <div class="modal-overlay" id="modal-upload-image">
     <div class="modal-sheet">
