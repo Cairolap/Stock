@@ -5,22 +5,22 @@
 
 :root {
   /* Surfaces - Industrial Slate Canvas & Crisp White Elevated Cards */
-  --bg-app: #f3f6f6;
+  --bg-app: #f4f6fb;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #ffffff;
-  --border-subtle: #d7e0e1;
-  --border-strong: #b9c7c9;
+  --border-subtle: #dbe2ea;
+  --border-strong: #bac7d5;
 
   /* Ink & Typography */
-  --text-primary: #142326;
-  --text-secondary: #536568;
-  --text-muted: #77878a;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #79889d;
   --text-inverse: #ffffff;
 
-  /* Brand Interactive */
-  --brand-primary: #0d6878;
-  --brand-hover: #095260;
-  --brand-tint: #e5f3f5;
+  /* Brand Interactive - Vibrant Modern Royal Blue #0454ff */
+  --brand-primary: #0454ff;
+  --brand-hover: #0043d9;
+  --brand-tint: #eef3ff;
 
   /* Semantic Status Hierarchy */
   --status-negative: #c63f4c;
@@ -29,16 +29,16 @@
   --status-out-bg: #fdebed;
   --status-low: #b86800;
   --status-low-bg: #fff3d9;
-  --status-normal: #34835b;
-  --status-normal-bg: #e7f4ec;
-  --status-max: #0d6878;
-  --status-max-bg: #e5f3f5;
+  --status-normal: #16a34a;
+  --status-normal-bg: #eaf8ef;
+  --status-max: #0454ff;
+  --status-max-bg: #eef3ff;
 
   /* Action Buttons */
-  --action-receive: #0d6878;
-  --action-receive-hover: #095260;
-  --action-issue: #0d6878;
-  --action-issue-hover: #095260;
+  --action-receive: #0454ff;
+  --action-receive-hover: #0043d9;
+  --action-issue: #0454ff;
+  --action-issue-hover: #0043d9;
   --action-count: #6856b8;
   --action-count-hover: #57469e;
 
@@ -2283,7 +2283,7 @@ body {
 }
 
 .bottom-nav {
-  box-shadow: 0 -8px 24px rgba(20, 35, 38, 0.07);
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .nav-item {
