@@ -1049,6 +1049,8 @@ body {
   padding: 2px 8px;
   border-radius: var(--radius-full);
   font-size: 0.75rem;
+}
+
 /* Image upload widget inside Create Part modal */
 .create-image-dropzone {
   border: 1.5px dashed var(--border-strong);
