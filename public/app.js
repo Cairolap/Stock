@@ -25,6 +25,7 @@ const state = {
   totalParts: 0,
   parts: [],
   selectedPart: null,
+  selectedActionPart: null,
   activeMovementKind: 1, // 1: Receive, 2: Issue
   stagedImageBlob: null,
 
@@ -66,6 +67,17 @@ const valNegative = document.getElementById('val-negative-count');
 const valOut = document.getElementById('val-out-count');
 const valLow = document.getElementById('val-low-count');
 const valTotal = document.getElementById('val-total-parts');
+const valAttention = document.getElementById('val-attention-count');
+
+// Canonical action menu
+const modalActionMenu = document.getElementById('modal-action-menu');
+const actionMenuContext = document.getElementById('action-menu-context');
+const btnCloseActionMenu = document.getElementById('btn-close-action-menu');
+const btnActionReceive = document.getElementById('btn-action-receive');
+const btnActionIssue = document.getElementById('btn-action-issue');
+const btnActionCount = document.getElementById('btn-action-count');
+const btnActionHistory = document.getElementById('btn-action-history');
+const btnActionEdit = document.getElementById('btn-action-edit');
 
 // Movement Modal
 const modalMovement = document.getElementById('modal-movement');
@@ -182,42 +194,45 @@ async function loadDashboard() {
     valOut.textContent = formatTabularNumber(out_of_stock_count);
     valLow.textContent = formatTabularNumber(low_stock_count);
     valTotal.textContent = formatTabularNumber(total_parts);
+    if (valAttention) {
+      valAttention.textContent = formatTabularNumber(
+        Number(negative_count || 0) + Number(out_of_stock_count || 0) + Number(low_stock_count || 0)
+      );
+    }
 
     // Render Urgent Replenishments List
     const urgentContainer = document.getElementById('urgent-replenishments-container');
     if (urgentContainer) {
       if (!urgent_replenishments || urgent_replenishments.length === 0) {
         urgentContainer.innerHTML = `
-          <div style="background: #ffffff; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 16px; text-align: center; color: var(--status-normal); font-size: 0.88rem;">
-            ✅ สต๊อกพัสดุทุกรายการอยู่ในระดับปลอดภัย (ไม่มีรายการต่ำกว่า Min)
+          <div class="dashboard-empty-state">
+            สต๊อกทุกรายการอยู่ในระดับปกติ
           </div>
         `;
       } else {
         urgentContainer.innerHTML = urgent_replenishments.map(p => {
           const isNegative = p.qty < 0;
           return `
-            <div class="urgent-item-card ${isNegative ? 'is-negative' : ''}">
-              <div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <strong class="num-tabular" style="font-size: 0.95rem;">${escapeHtml(p.part_no)}</strong>
-                  <span class="badge ${p.status_config?.badgeClass || 'badge-out'}">${p.status_config?.label || p.status}</span>
-                </div>
-                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(p.description)}</div>
-                <div style="font-size: 0.8rem; margin-top: 4px;">
-                  คงเหลือ: <strong class="num-tabular" style="color: ${p.status_config?.colorHex || 'inherit'}">${formatTabularNumber(p.qty)}</strong> ${escapeHtml(p.unit)}
-                  ${p.recommended_replenish ? `· แนะนำเติม: <strong class="num-tabular" style="color: var(--status-low);">+${formatTabularNumber(p.recommended_replenish)}</strong>` : ''}
-                </div>
-              </div>
-            </div>
+            <button type="button" class="urgent-item-card ${isNegative ? 'is-negative' : ''}" data-part-id="${p.id}">
+              <span class="stock-rail ${p.qty < 0 || p.qty === 0 ? 'is-danger' : 'is-warning'}" aria-hidden="true"></span>
+              <span class="urgent-item-copy">
+                <strong class="num-tabular">${escapeHtml(p.part_no)}</strong>
+                <span>${escapeHtml(p.description)}</span>
+                <small>Min ${formatTabularNumber(p.min_qty)}${p.recommended_replenish ? ` · แนะนำเติม ${formatTabularNumber(p.recommended_replenish)}` : ''}</small>
+              </span>
+              <span class="urgent-item-qty">
+                <strong class="num-tabular">${formatTabularNumber(p.qty)}</strong>
+                <small>${escapeHtml(p.unit)} · ${p.status_config?.label || p.status}</small>
+              </span>
+            </button>
           `;
         }).join('');
 
         urgentContainer.querySelectorAll('.urgent-item-card').forEach(card => {
-          card.style.cursor = 'pointer';
           card.onclick = () => {
             const partId = parseInt(card.getAttribute('data-part-id'), 10);
             const part = (urgent_replenishments || []).find(x => x.id === partId);
-            if (part) openMovementModal(part, 1);
+            if (part) openActionMenu(part);
           };
         });
       }
@@ -348,69 +363,41 @@ function renderDualViews() {
     const config = part.status_config || {};
     const replenishText = part.recommended_replenish ? `เติม +${formatTabularNumber(part.recommended_replenish)}` : '';
     const imgUrl = part.image_key ? `/api/parts/${part.id}/image?v=${part.version || ''}` : null;
+    const railClass = ['NEGATIVE', 'OUT_OF_STOCK'].includes(part.status)
+      ? 'is-danger'
+      : part.status === 'LOW_STOCK'
+        ? 'is-warning'
+        : part.status === 'OVER_MAX'
+          ? 'is-info'
+          : 'is-normal';
 
     return `
-      <div class="part-card" data-part-id="${part.id}">
-        <div class="part-card-header">
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <div class="part-thumb" data-part-id="${part.id}" title="${imgUrl ? 'แตะเพื่อดูภาพขนาดเต็ม / จัดการรูปภาพ' : 'แตะเพื่อเพิ่มรูปภาพ'}">
-              ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">` : '📦'}
-            </div>
-            <div>
-              <div class="part-no-title" style="cursor: pointer;" data-action="edit" data-part-id="${part.id}">${escapeHtml(part.part_no)}</div>
-              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px;">
-                ${part.brand_name ? `<span class="part-brand-tag">${escapeHtml(part.brand_name)}</span>` : ''}
-                ${part.location ? `<span class="part-location-tag">📍 ${escapeHtml(part.location)}</span>` : ''}
-              </div>
-            </div>
-          </div>
-          <span class="badge ${config.badgeClass || 'badge-normal'}">
-            ${config.label || part.status}
+      <article class="part-card stock-card" data-part-id="${part.id}">
+        <span class="stock-rail ${railClass}" aria-hidden="true"></span>
+        <button type="button" class="part-thumb" data-part-id="${part.id}" aria-label="${imgUrl ? `ดูรูป ${escapeHtml(part.part_no)}` : `เพิ่มรูป ${escapeHtml(part.part_no)}`}">
+          ${imgUrl ? `<img src="${imgUrl}" alt="" loading="lazy" onerror="this.onerror=null; this.parentElement.classList.add('is-empty'); this.remove();">` : '<span class="part-thumb-placeholder" aria-hidden="true"></span>'}
+        </button>
+        <button type="button" class="stock-card-body" data-action="menu" data-part-id="${part.id}">
+          <span class="stock-card-heading">
+            <span>
+              <strong class="part-no-title">${escapeHtml(part.part_no)}</strong>
+              <span class="part-desc">${escapeHtml(part.description)}</span>
+            </span>
+            <span class="stock-card-qty">
+              <strong class="num-tabular">${formatTabularNumber(part.qty)}</strong>
+              <small>${escapeHtml(part.unit)}</small>
+            </span>
           </span>
-        </div>
-
-        <div class="part-desc">${escapeHtml(part.description)}</div>
-
-        <div class="part-metrics-row">
-          <div class="metric-item">
-            <span class="metric-label">คงเหลือ</span>
-            <span class="metric-val num-tabular" style="color: ${config.colorHex || 'inherit'}">
-              ${formatTabularNumber(part.qty)} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);">${escapeHtml(part.unit)}</span>
-            </span>
-          </div>
-          <div class="metric-item" style="text-align: right;">
-            <span class="metric-label">Min / Max</span>
-            <span style="font-size: 0.85rem; font-weight: 600;" class="num-tabular">
-              ${formatTabularNumber(part.min_qty)} / ${part.max_qty !== null ? formatTabularNumber(part.max_qty) : '-'}
-            </span>
-          </div>
-          ${replenishText ? `
-            <div class="metric-item" style="text-align: right;">
-              <span class="metric-label">แนะนำ</span>
-              <span style="font-size: 0.82rem; font-weight: 700; color: var(--status-low);" class="num-tabular">
-                ${replenishText}
-              </span>
-            </div>
-          ` : ''}
-        </div>
-
-        <div class="part-actions">
-          <button class="btn-sm-action btn-sm-receive" data-action="receive" data-part-id="${part.id}">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-            รับเข้า
-          </button>
-          <button class="btn-sm-action btn-sm-issue" data-action="issue" data-part-id="${part.id}">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-            เบิกออก
-          </button>
-          <button class="btn-icon" data-action="history" data-part-id="${part.id}" title="ดูประวัติการเคลื่อนไหว">
-            ⏱️
-          </button>
-          <button class="btn-icon" data-action="edit" data-part-id="${part.id}" title="แก้ไขข้อมูล">
-            ✏️
-          </button>
-        </div>
-      </div>
+          <span class="stock-card-meta">
+            <span>${part.brand_name ? escapeHtml(part.brand_name) : 'ไม่ระบุยี่ห้อ'}${part.location ? ` · ${escapeHtml(part.location)}` : ''}</span>
+            <span class="num-tabular">Min ${formatTabularNumber(part.min_qty)}${part.max_qty !== null ? ` / Max ${formatTabularNumber(part.max_qty)}` : ''}</span>
+          </span>
+          <span class="stock-card-footer">
+            <span class="status-label ${railClass}">${config.label || part.status}</span>
+            <span>${replenishText || 'ทำรายการ'} <span aria-hidden="true">›</span></span>
+          </span>
+        </button>
+      </article>
     `;
   }).join('');
 
@@ -424,14 +411,14 @@ function renderDualViews() {
       <tr data-part-id="${part.id}">
         <td>
           <div class="part-thumb" data-part-id="${part.id}" title="${imgUrl ? 'แตะเพื่อดูภาพขนาดเต็ม / จัดการรูปภาพ' : 'แตะเพื่อเพิ่มรูปภาพ'}">
-            ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">` : '📦'}
+            ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(part.part_no)}" loading="lazy" onerror="this.onerror=null; this.hidden=true; this.parentElement.classList.add('is-empty');">` : '<span class="part-thumb-placeholder" aria-hidden="true"></span>'}
           </div>
         </td>
         <td>
           <strong class="num-tabular" style="cursor: pointer; color: var(--brand-primary);" data-action="edit" data-part-id="${part.id}">
             ${escapeHtml(part.part_no)}
           </strong>
-          ${part.location ? `<div style="font-size: 0.75rem; color: var(--text-muted);">📍 ${escapeHtml(part.location)}</div>` : ''}
+          ${part.location ? `<div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(part.location)}</div>` : ''}
         </td>
         <td style="max-width: 260px;">${escapeHtml(part.description)}</td>
         <td>
@@ -460,11 +447,11 @@ function renderDualViews() {
             <button class="btn-sm-action btn-sm-issue" style="flex:none; padding: 0 10px;" data-action="issue" data-part-id="${part.id}">
               - เบิกออก
             </button>
-            <button class="btn-icon" data-action="history" data-part-id="${part.id}" title="ดูประวัติการเคลื่อนไหว">
-              ⏱️
+            <button class="btn-icon" data-action="history" data-part-id="${part.id}" title="ดูประวัติการเคลื่อนไหว" aria-label="ดูประวัติการเคลื่อนไหว">
+              ประวัติ
             </button>
-            <button class="btn-icon" data-action="edit" data-part-id="${part.id}" title="แก้ไข">
-              ✏️
+            <button class="btn-icon" data-action="edit" data-part-id="${part.id}" title="แก้ไข" aria-label="แก้ไขพัสดุ">
+              แก้ไข
             </button>
           </div>
         </td>
@@ -476,6 +463,15 @@ function renderDualViews() {
 }
 
 function attachActionListeners() {
+  document.querySelectorAll('[data-action="menu"]').forEach((element) => {
+    element.onclick = (event) => {
+      event.stopPropagation();
+      const partId = parseInt(element.getAttribute('data-part-id'), 10);
+      const part = state.parts.find((item) => item.id === partId);
+      if (part) openActionMenu(part);
+    };
+  });
+
   // Receive & Issue buttons
   document.querySelectorAll('[data-action="receive"]').forEach(btn => {
     btn.onclick = (e) => {
@@ -569,6 +565,72 @@ function escapeHtml(str) {
   }[m]));
 }
 
+function openActionMenu(part = null) {
+  state.selectedActionPart = part;
+  actionMenuContext.textContent = part
+    ? `${part.part_no} · คงเหลือ ${formatTabularNumber(part.qty)} ${part.unit}`
+    : 'เลือกงานที่ต้องการทำ';
+
+  document.querySelectorAll('.action-part-only').forEach((element) => {
+    element.hidden = !part;
+  });
+
+  modalActionMenu.classList.add('open');
+  window.setTimeout(() => btnActionReceive.focus(), 0);
+}
+
+function closeActionMenu() {
+  modalActionMenu.classList.remove('open');
+  state.selectedActionPart = null;
+}
+
+function choosePartForMovement(kind) {
+  closeActionMenu();
+  switchTab('parts');
+  showToast(kind === 1 ? 'เลือกวัสดุที่ต้องการรับเข้า' : 'เลือกวัสดุที่ต้องการเบิกออก', 'info');
+}
+
+btnCloseActionMenu.onclick = closeActionMenu;
+modalActionMenu.addEventListener('click', (event) => {
+  if (event.target === modalActionMenu) closeActionMenu();
+});
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && modalActionMenu.classList.contains('open')) closeActionMenu();
+});
+
+btnActionReceive.onclick = () => {
+  const part = state.selectedActionPart;
+  if (!part) return choosePartForMovement(1);
+  closeActionMenu();
+  openMovementModal(part, 1);
+};
+
+btnActionIssue.onclick = () => {
+  const part = state.selectedActionPart;
+  if (!part) return choosePartForMovement(2);
+  closeActionMenu();
+  openMovementModal(part, 2);
+};
+
+btnActionCount.onclick = () => {
+  closeActionMenu();
+  switchTab('stockcount');
+};
+
+btnActionHistory.onclick = () => {
+  const part = state.selectedActionPart;
+  if (!part) return;
+  closeActionMenu();
+  openPartHistoryModal(part);
+};
+
+btnActionEdit.onclick = () => {
+  const part = state.selectedActionPart;
+  if (!part) return;
+  closeActionMenu();
+  openEditPartModal(part);
+};
+
 /**
  * Movement Modal Handler (Receive or Issue)
  */
@@ -589,13 +651,13 @@ function openMovementModal(part, kind) {
   movementOperator.value = cachedOperator;
 
   if (kind === 1) {
-    movementModalTitle.textContent = '📥 บันทึกรับเข้าพัสดุ';
+    movementModalTitle.textContent = 'บันทึกรับเข้าพัสดุ';
     labelActionType.textContent = 'รับเข้า';
     btnSubmitMovement.style.background = 'var(--action-receive)';
     btnSubmitMovement.textContent = 'ยืนยันรับเข้า';
     boxNegativeWarning.style.display = 'none';
   } else {
-    movementModalTitle.textContent = '📤 บันทึกเบิกออกพัสดุ';
+    movementModalTitle.textContent = 'บันทึกเบิกออกพัสดุ';
     labelActionType.textContent = 'เบิกออก';
     btnSubmitMovement.style.background = 'var(--action-issue)';
     btnSubmitMovement.textContent = 'ยืนยันเบิกออก';
@@ -738,7 +800,7 @@ function openImageLightbox(part) {
   }
 
   if (part.location) {
-    lightboxLocationTag.textContent = `📍 ${part.location}`;
+    lightboxLocationTag.textContent = part.location;
     lightboxLocationTag.style.display = 'inline-flex';
   } else {
     lightboxLocationTag.style.display = 'none';
@@ -842,7 +904,7 @@ async function processSelectedImageFile(file) {
   }
 
   try {
-    dropzoneImage.innerHTML = `<div>⏳ กำลังประมวลผลและย่อรูปภาพ...</div>`;
+    dropzoneImage.innerHTML = `<div>กำลังประมวลผลและย่อรูปภาพ...</div>`;
     const result = await compressImageToWebP(file);
     state.stagedImageBlob = result.blob;
 
@@ -866,7 +928,7 @@ async function processSelectedImageFile(file) {
     showToast(err.message || 'ไม่สามารถย่อรูปภาพได้', 'error');
   } finally {
     dropzoneImage.innerHTML = `
-      <div style="font-size: 2.2rem; margin-bottom: 6px;">📷</div>
+      <div class="upload-glyph" aria-hidden="true"></div>
       <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">ลากไฟล์รูปภาพมาวางที่นี่</div>
       <div style="font-size: 0.82rem; color: var(--brand-primary); font-weight: 500; margin-bottom: 2px;">หรือแตะเพื่อเลือกไฟล์ / ถ่ายรูปจากกล้อง</div>
       <div style="font-size: 0.76rem; color: var(--text-muted);">รองรับ JPG, PNG, WebP (สามารถกด Ctrl+V เพื่อวางรูปได้)</div>
@@ -1234,9 +1296,12 @@ if (btnQuickIss) {
 // ==========================================================
 function switchTab(tabName) {
   state.activeTab = tabName;
+  const activeNavId = tabName === 'stockcount' ? 'nav-action' : `nav-${tabName}`;
 
   document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
-    btn.classList.toggle('active', btn.id === `nav-${tabName}`);
+    btn.classList.toggle('active', btn.id === activeNavId);
+    if (btn.id === activeNavId) btn.setAttribute('aria-current', 'page');
+    else btn.removeAttribute('aria-current');
   });
 
   document.querySelectorAll('.app-view').forEach(view => {
@@ -1257,7 +1322,16 @@ function switchTab(tabName) {
 document.getElementById('nav-dashboard').onclick = () => switchTab('dashboard');
 document.getElementById('nav-parts').onclick = () => switchTab('parts');
 document.getElementById('nav-movements').onclick = () => switchTab('movements');
-document.getElementById('nav-stockcount').onclick = () => switchTab('stockcount');
+document.getElementById('nav-action').onclick = () => openActionMenu();
+
+document.querySelectorAll('[data-dashboard-filter]').forEach((button) => {
+  button.onclick = () => {
+    switchTab('parts');
+    const status = button.getAttribute('data-dashboard-filter') || '';
+    const chip = document.querySelector(`#filter-chips-container [data-status="${status}"]`);
+    if (chip) chip.click();
+  };
+});
 
 const btnViewAllUrgent = document.getElementById('btn-view-all-urgent');
 if (btnViewAllUrgent) {
@@ -2010,7 +2084,7 @@ function renderCountView() {
       valInput = draft.countedQty;
       if (draft.difference === 0) {
         cardClass = 'count-card is-match';
-        badgeHtml = '<span class="count-variance-badge badge-variance-match">✅ ตรงกัน (0)</span>';
+        badgeHtml = '<span class="count-variance-badge badge-variance-match">ตรงกัน (0)</span>';
       } else if (draft.difference > 0) {
         cardClass = 'count-card is-surplus';
         badgeHtml = `<span class="count-variance-badge badge-variance-surplus">🟢 เกิน (+${draft.difference})</span>`;
@@ -2031,8 +2105,8 @@ function renderCountView() {
         <div class="count-card-desc">${escapeHtml(part.description)}</div>
         <div class="count-card-meta">
           <span>ระบบ: <strong class="num-tabular" style="color: var(--text-primary);">${formatTabularNumber(part.qty)}</strong> ${escapeHtml(part.unit)}</span>
-          ${part.location ? `<span>· 📍 ${escapeHtml(part.location)}</span>` : ''}
-          ${part.brand_name ? `<span>· 🏷️ ${escapeHtml(part.brand_name)}</span>` : ''}
+          ${part.location ? `<span>· ${escapeHtml(part.location)}</span>` : ''}
+          ${part.brand_name ? `<span>· ${escapeHtml(part.brand_name)}</span>` : ''}
         </div>
 
         <div class="count-control-row">
@@ -2053,7 +2127,7 @@ function renderCountView() {
         ${hasDiff ? `
           <div class="count-reason-box">
             <label style="font-size: 0.76rem; font-weight: 600; color: var(--status-out);">
-              ⚠️ ระบุเหตุผลยอดต่าง:
+              ระบุเหตุผลยอดต่าง:
             </label>
             <select class="count-reason-select" data-action="count-reason" data-part-id="${part.id}">
               ${DISCREPANCY_REASONS.map(r => `<option value="${r}" ${draft.reason === r ? 'selected' : ''}>${r}</option>`).join('')}
@@ -2074,7 +2148,7 @@ function renderCountView() {
     if (isCounted) {
       valInput = draft.countedQty;
       if (draft.difference === 0) {
-        badgeHtml = '<span class="count-variance-badge badge-variance-match">✅ ตรงกัน (0)</span>';
+        badgeHtml = '<span class="count-variance-badge badge-variance-match">ตรงกัน (0)</span>';
       } else if (draft.difference > 0) {
         badgeHtml = `<span class="count-variance-badge badge-variance-surplus">🟢 เกิน (+${draft.difference})</span>`;
       } else {
@@ -2094,7 +2168,7 @@ function renderCountView() {
           <div>${escapeHtml(part.description)}</div>
         </td>
         <td style="text-align: center; font-size: 0.82rem; color: var(--text-secondary);">
-          ${part.location ? `📍 ${escapeHtml(part.location)}` : '-'}
+          ${part.location ? escapeHtml(part.location) : '-'}
         </td>
         <td style="text-align: center;">
           <strong class="num-tabular" style="font-size: 1.05rem;">${formatTabularNumber(part.qty)}</strong>
@@ -2238,7 +2312,7 @@ if (btnOpenConfirmCount) {
     if (diffLines.length === 0) {
       revDiscrepancyList.innerHTML = `
         <div style="text-align: center; padding: 18px; color: var(--status-normal); background: var(--bg-app); border-radius: var(--radius-sm); font-size: 0.88rem;">
-          ✅ ยอดนับจริงตรงกับยอดระบบทุกรายการ (ไม่มีผลต่างที่ต้องปรับยอด)
+          ยอดนับจริงตรงกับยอดระบบทุกรายการ (ไม่มีผลต่างที่ต้องปรับยอด)
         </div>
       `;
     } else {
@@ -2304,7 +2378,7 @@ if (btnExecuteSubmitCount) {
     }
 
     btnExecuteSubmitCount.disabled = true;
-    btnExecuteSubmitCount.textContent = '⏳ กำลังบันทึกและปรับยอด...';
+    btnExecuteSubmitCount.textContent = 'กำลังบันทึกและปรับยอด...';
 
     try {
       const res = await fetch('/api/counts/complete', {
@@ -2363,7 +2437,7 @@ async function loadCountHistory() {
     if (sessions.length === 0) {
       countHistoryContainer.innerHTML = `
         <div style="text-align:center; padding: 48px 16px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
-          <div style="font-size: 2.5rem; margin-bottom: 8px;">📜</div>
+          <div class="empty-state-mark" aria-hidden="true"></div>
           <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 4px;">ยังไม่มีประวัติการตรวจนับสต๊อก</h4>
           <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
             เมื่อมีการตรวจนับและยืนยันรอบนับ ประวัติการตรวจนับและผลต่างจะปรากฏที่นี่

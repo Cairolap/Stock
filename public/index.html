@@ -12,20 +12,20 @@
   <!-- App Header -->
   <header class="app-header">
     <div class="brand-title">
-      <div class="brand-icon">
+      <div class="brand-icon" aria-hidden="true">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3.5l7 4v9l-7 4-7-4v-9l7-4z" stroke="#0ea5e9" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M12 11.5l7-4M12 11.5v9M12 11.5l-7-4" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M12 3.5l7 4v9l-7 4-7-4v-9l7-4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M12 11.5l7-4M12 11.5v9M12 11.5l-7-4" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
         </svg>
       </div>
       <div>
-        <div class="brand-name">คลังวัสดุช่าง & พัสดุ</div>
-        <div class="brand-badge">Mobile-First Stock · D1 Ledger</div>
+        <div class="brand-name">Stock</div>
+        <div class="brand-badge">คลังวัสดุช่างและพัสดุ</div>
       </div>
     </div>
     <div>
-      <button id="btn-open-create-part" class="chip" style="background: var(--brand-tint); color: var(--brand-primary); border-color: var(--brand-primary); font-weight: 700;">
-        + เพิ่มวัสดุ
+      <button id="btn-open-create-part" class="header-add-button">
+        <span aria-hidden="true">＋</span> เพิ่มวัสดุ
       </button>
     </div>
   </header>
@@ -35,63 +35,36 @@
 
     <!-- View 1: Dashboard -->
     <section id="view-dashboard" class="app-view active">
-      <!-- KPI Summary Cards -->
-      <!-- KPI Summary Cards (Single Row of 4 Slots) -->
-      <div class="kpi-grid">
-        <div class="kpi-card kpi-negative" id="card-kpi-negative">
-          <div class="kpi-label">
-            <svg class="kpi-svg-icon" viewBox="0 0 24 24" fill="none">
-              <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" stroke="#c026d3" stroke-width="2.2" stroke-linejoin="round"/>
-              <line x1="12" y1="8" x2="12" y2="13" stroke="#c026d3" stroke-width="2.5" stroke-linecap="round"/>
-              <circle cx="12" cy="16.5" r="1.3" fill="#c026d3"/>
-            </svg>
-            <span>ติดลบ</span>
+      <section class="attention-panel" aria-labelledby="attention-title">
+        <div class="attention-heading">
+          <div>
+            <div class="attention-eyebrow">ภาพรวมคลัง</div>
+            <h1 id="attention-title">ต้องจัดการวันนี้</h1>
           </div>
-          <div class="kpi-value num-tabular" id="val-negative-count">0</div>
-        </div>
-
-        <div class="kpi-card kpi-out" id="card-kpi-out">
-          <div class="kpi-label">
-            <svg class="kpi-svg-icon" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="9" stroke="#e11d48" stroke-width="2.2"/>
-              <line x1="6.5" y1="6.5" x2="17.5" y2="17.5" stroke="#e11d48" stroke-width="2.4" stroke-linecap="round"/>
-            </svg>
-            <span>หมดสต๊อก</span>
+          <div class="attention-total">
+            <strong class="num-tabular" id="val-attention-count">0</strong>
+            <span>รายการ</span>
           </div>
-          <div class="kpi-value num-tabular" id="val-out-count">0</div>
         </div>
-
-        <div class="kpi-card kpi-low" id="card-kpi-low">
-          <div class="kpi-label">
-            <svg class="kpi-svg-icon" viewBox="0 0 24 24" fill="none">
-              <path d="M12 3l9 16H3l9-16z" stroke="#d97706" stroke-width="2.2" stroke-linejoin="round"/>
-              <line x1="12" y1="9" x2="12" y2="13.5" stroke="#d97706" stroke-width="2.2" stroke-linecap="round"/>
-              <circle cx="12" cy="16.5" r="1.2" fill="#d97706"/>
-            </svg>
-            <span>ต้องเติม</span>
-          </div>
-          <div class="kpi-value num-tabular" id="val-low-count">0</div>
+        <div class="attention-breakdown" aria-label="สถานะที่ต้องจัดการ">
+          <button type="button" class="attention-stat is-danger" data-dashboard-filter="NEGATIVE">
+            <span>ติดลบ</span><strong class="num-tabular" id="val-negative-count">0</strong>
+          </button>
+          <button type="button" class="attention-stat is-danger" data-dashboard-filter="OUT_OF_STOCK">
+            <span>หมด</span><strong class="num-tabular" id="val-out-count">0</strong>
+          </button>
+          <button type="button" class="attention-stat is-warning" data-dashboard-filter="LOW_STOCK">
+            <span>ถึง Min</span><strong class="num-tabular" id="val-low-count">0</strong>
+          </button>
         </div>
-
-        <div class="kpi-card kpi-total" id="card-kpi-total">
-          <div class="kpi-label">
-            <svg class="kpi-svg-icon" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" stroke="#2563eb" stroke-width="2.2"/>
-              <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" stroke="#2563eb" stroke-width="2.2"/>
-              <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" stroke="#2563eb" stroke-width="2.2"/>
-              <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" stroke="#38bdf8" stroke-width="2.2"/>
-            </svg>
-            <span>ทั้งหมด</span>
-          </div>
-          <div class="kpi-value num-tabular" id="val-total-parts">0</div>
-        </div>
-      </div>
+        <div class="attention-footer">วัสดุทั้งหมด <strong class="num-tabular" id="val-total-parts">0</strong> รายการ</div>
+      </section>
 
       <!-- Urgent Replenishments Section -->
       <div class="dashboard-section">
         <div class="dashboard-section-title">
-          <span>🚨 รายการที่ต้องเติมสต๊อกด่วน</span>
-          <button id="btn-view-all-urgent" class="chip" style="font-size: 0.75rem;">ดูรายการพัสดุ ➔</button>
+          <span>เร่งด่วน</span>
+          <button id="btn-view-all-urgent" class="text-button">ดูทั้งหมด</button>
         </div>
         <div id="urgent-replenishments-container">
           <div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px 0;">กำลังโหลดข้อมูล...</div>
@@ -101,8 +74,8 @@
       <!-- Recent Movements Section -->
       <div class="dashboard-section">
         <div class="dashboard-section-title">
-          <span>⏱️ รายการเคลื่อนไหวล่าสุด</span>
-          <button id="btn-view-all-movements" class="chip" style="font-size: 0.75rem;">ดูประวัติทั้งหมด ➔</button>
+          <span>การเคลื่อนไหวล่าสุด</span>
+          <button id="btn-view-all-movements" class="text-button">ดูประวัติ</button>
         </div>
         <div id="dashboard-recent-movements-container">
           <div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px 0;">กำลังโหลดข้อมูล...</div>
@@ -120,7 +93,7 @@
               <path d="M12 11.7l8-4.6M12 11.7v9.8M12 11.7l-8-4.6" stroke="#fbbf24" stroke-width="1.8"/>
             </svg>
           </span>
-          <span>รายการพัสดุและคลังวัสดุ</span>
+          <span>รายการวัสดุ</span>
         </div>
         <button id="btn-open-create-part-view" class="chip" style="background: var(--brand-tint); color: var(--brand-primary); border-color: var(--brand-primary); font-weight: 700;">
           + เพิ่มพัสดุใหม่
@@ -136,11 +109,11 @@
 
         <div class="filter-chips" id="filter-chips-container">
           <button class="chip active" data-status="">ทั้งหมด</button>
-          <button class="chip" data-status="NEGATIVE">🚨 ติดลบ</button>
-          <button class="chip" data-status="OUT_OF_STOCK">⛔ หมดสต๊อก</button>
-          <button class="chip" data-status="LOW_STOCK">⚠️ ถึงจุดสั่งซื้อ</button>
-          <button class="chip" data-status="NORMAL">✅ ปกติ</button>
-          <button class="chip" data-status="OVER_MAX">ℹ️ ถึง Max</button>
+          <button class="chip" data-status="NEGATIVE">ติดลบ</button>
+          <button class="chip" data-status="OUT_OF_STOCK">หมด</button>
+          <button class="chip" data-status="LOW_STOCK">ถึง Min</button>
+          <button class="chip" data-status="NORMAL">ปกติ</button>
+          <button class="chip" data-status="OVER_MAX">เต็มตาม Max</button>
         </div>
       </div>
 
@@ -196,7 +169,7 @@
               <polyline points="12 7 12 12 15.5 14" stroke="#d946ef" stroke-width="2.2" stroke-linecap="round"/>
             </svg>
           </span>
-          <span>บันทึกการเคลื่อนไหวสต๊อก (Movement Ledger)</span>
+          <span>ประวัติสต๊อก</span>
         </div>
         <button id="btn-export-movements-csv" class="btn-export-csv">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -216,10 +189,10 @@
         </div>
         <div class="filter-chips" id="movement-filter-chips">
           <button class="chip active" data-kind="">ทั้งหมด</button>
-          <button class="chip" data-kind="1">📥 รับเข้า</button>
-          <button class="chip" data-kind="2">📤 เบิกออก</button>
-          <button class="chip" data-kind="3">⚖️ ปรับยอด</button>
-          <button class="chip" data-kind="4">↺ ยกเลิกรายการ</button>
+          <button class="chip" data-kind="1">รับเข้า</button>
+          <button class="chip" data-kind="2">เบิกออก</button>
+          <button class="chip" data-kind="3">ปรับยอด</button>
+          <button class="chip" data-kind="4">ยกเลิกรายการ</button>
         </div>
       </div>
 
@@ -274,14 +247,14 @@
               <path d="M8.5 13l2.5 2.5 5-5" stroke="#06b6d4" stroke-width="2.2" stroke-linecap="round"/>
             </svg>
           </span>
-          <span>ระบบตรวจนับสต๊อก (Stock Count Audit)</span>
+          <span>เช็คสต๊อก</span>
         </div>
         <div class="count-view-tabs">
           <button class="chip active" id="btn-count-subtab-active">
-            ✏️ เริ่มนับสต๊อก
+            เริ่มนับสต๊อก
           </button>
           <button class="chip" id="btn-count-subtab-history">
-            📜 ประวัติการตรวจนับ
+            ประวัติการตรวจนับ
           </button>
         </div>
       </div>
@@ -293,7 +266,7 @@
           <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
             <span>ข้อมูลรอบการตรวจนับ</span>
             <button type="button" class="btn-clear-count" id="btn-reset-count-draft" title="ล้างข้อมูลที่กำลังนับทั้งหมด">
-              🔄 ล้างแบบร่าง
+              ล้างแบบร่าง
             </button>
           </div>
           <div class="form-row-2">
@@ -340,15 +313,15 @@
         <!-- Filter & Search Bar -->
         <div class="search-filter-wrapper" style="margin-top: 14px;">
           <div class="search-bar">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon" aria-hidden="true"></span>
             <input type="text" id="count-search-input" class="search-input" placeholder="ค้นหา Part Number, รายละเอียด หรือตำแหน่ง..." autocomplete="off">
             <button class="btn-clear-search" id="btn-clear-count-search" style="display: none;">✕</button>
           </div>
           <div class="filter-chips-scroll" id="count-filter-chips">
             <button class="chip active" data-count-filter="">ทั้งหมด</button>
-            <button class="chip" data-count-filter="PENDING">⏳ ยังไม่นับ</button>
-            <button class="chip" data-count-filter="MATCH">✅ ตรงกัน</button>
-            <button class="chip" data-count-filter="DISCREPANCY">⚠️ มียอดต่าง</button>
+            <button class="chip" data-count-filter="PENDING">ยังไม่นับ</button>
+            <button class="chip" data-count-filter="MATCH">ตรงกัน</button>
+            <button class="chip" data-count-filter="DISCREPANCY">มียอดต่าง</button>
           </div>
         </div>
 
@@ -388,7 +361,7 @@
             </div>
           </div>
           <button class="btn-action" id="btn-open-confirm-count" style="background: var(--action-count); color: #fff; width: auto; min-width: 170px; font-weight: 700;">
-            📋 ตรวจสอบและบันทึก
+            ตรวจสอบและบันทึก
           </button>
         </div>
       </div>
@@ -405,7 +378,7 @@
 
   <!-- Bottom Navigation Bar -->
   <nav class="bottom-nav">
-    <button class="nav-item active" id="nav-dashboard">
+    <button class="nav-item active" id="nav-dashboard" aria-current="page">
       <span class="nav-icon">
         <svg class="nav-svg-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M3 9.5L12 2.5l9 7V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20V9.5z" stroke="#06b6d4" stroke-width="2.2" stroke-linejoin="round"/>
@@ -425,27 +398,62 @@
       </span>
       <span>รายการพัสดุ</span>
     </button>
+    <button class="nav-item nav-primary-action" id="nav-action" aria-haspopup="dialog" aria-controls="modal-action-menu">
+      <span class="nav-icon">
+        <svg class="nav-svg-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M7 12h10M12 7v10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </span>
+      <span>ทำรายการ</span>
+    </button>
     <button class="nav-item" id="nav-movements">
       <span class="nav-icon">
         <svg class="nav-svg-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M20 12A8 8 0 0 1 7.2 18.2L3.5 15M4 12A8 8 0 0 1 16.8 5.8L20.5 9" stroke="#d946ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <polyline points="21 4.5 20.5 9 16 9" stroke="#d946ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <polyline points="3 19.5 3.5 15 8 15" stroke="#d946ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 12A8 8 0 0 1 7.2 18.2L3.5 15M4 12A8 8 0 0 1 16.8 5.8L20.5 9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="21 4.5 20.5 9 16 9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="3 19.5 3.5 15 8 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </span>
-      <span>เคลื่อนไหว</span>
-    </button>
-    <button class="nav-item" id="nav-stockcount">
-      <span class="nav-icon">
-        <svg class="nav-svg-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <rect x="4.5" y="4.5" width="15" height="16.5" rx="3" stroke="#2563eb" stroke-width="2.2"/>
-          <path d="M9 2.8h6a1 1 0 0 1 1 1v1.7H8V3.8a1 1 0 0 1 1-1z" stroke="#2563eb" stroke-width="1.8" fill="#ffffff"/>
-          <path d="M8.5 13l2.5 2.5 5-5" stroke="#3b82f6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </span>
-      <span>เช็คสต๊อก</span>
+      <span>ประวัติ</span>
     </button>
   </nav>
+
+  <!-- Canonical action menu: one entry point for inventory operations -->
+  <div class="modal-overlay" id="modal-action-menu" role="dialog" aria-modal="true" aria-labelledby="action-menu-title">
+    <div class="modal-sheet action-menu-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="action-menu-title">ทำรายการ</h3>
+          <p class="action-menu-context" id="action-menu-context">เลือกงานที่ต้องการทำ</p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-action-menu" aria-label="ปิดเมนูทำรายการ">✕</button>
+      </div>
+      <div class="action-menu-grid">
+        <button type="button" class="action-menu-option" id="btn-action-receive">
+          <span class="action-menu-icon" aria-hidden="true">＋</span>
+          <span><strong>รับเข้า</strong><small>เพิ่มจำนวนเข้าคลัง</small></span>
+        </button>
+        <button type="button" class="action-menu-option" id="btn-action-issue">
+          <span class="action-menu-icon" aria-hidden="true">−</span>
+          <span><strong>เบิกออก</strong><small>บันทึกวัสดุที่นำไปใช้</small></span>
+        </button>
+        <button type="button" class="action-menu-option" id="btn-action-count">
+          <span class="action-menu-icon" aria-hidden="true">✓</span>
+          <span><strong>เช็คสต๊อก</strong><small>ตรวจนับและปรับยอดจริง</small></span>
+        </button>
+        <button type="button" class="action-menu-option action-part-only" id="btn-action-history">
+          <span class="action-menu-icon" aria-hidden="true">↺</span>
+          <span><strong>ดูประวัติ Part</strong><small>ตรวจรายการย้อนหลัง</small></span>
+        </button>
+        <button type="button" class="action-menu-option action-part-only" id="btn-action-edit">
+          <span class="action-menu-icon" aria-hidden="true">•••</span>
+          <span><strong>จัดการข้อมูล</strong><small>แก้ไขรายละเอียดและรูปภาพ</small></span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Bottom Sheet Modal for Movement (Receive / Issue) -->
   <div class="modal-overlay" id="modal-movement">
@@ -483,7 +491,7 @@
 
         <!-- Negative Warning Box (Dynamic when issuing > current qty) -->
         <div id="box-negative-warning" style="display: none; background: var(--status-negative-bg); border: 1px solid var(--status-negative); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 12px; font-size: 0.85rem; color: var(--status-negative);">
-          ⚠️ <strong>คำเตือนยอดติดลบ:</strong> การเบิกนี้จะทำให้ยอดคงเหลือติดลบ ระบบอนุญาตให้บันทึกได้ แต่จะขึ้นแจ้งเตือนให้เร่งรับเข้าชดเชย
+          <strong>คำเตือนยอดติดลบ:</strong> การเบิกนี้จะทำให้ยอดคงเหลือติดลบ ระบบอนุญาตให้บันทึกได้ แต่จะขึ้นแจ้งเตือนให้เร่งรับเข้าชดเชย
         </div>
 
         <!-- Operator Name (with LocalStorage Memory) -->
@@ -617,10 +625,10 @@
 
         <div style="display: flex; gap: 10px; margin-top: 14px;">
           <button type="button" class="btn-action" id="btn-open-image-from-edit" style="background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--border-subtle); flex: 1;">
-            📷 จัดการรูปภาพ
+            จัดการรูปภาพ
           </button>
           <button type="button" class="btn-action" id="btn-delete-part" style="background: var(--status-out-bg); color: var(--status-out); border: 1px solid var(--status-out); flex: 1;">
-            🗑️ ลบพัสดุ
+            ลบพัสดุ
           </button>
         </div>
 
@@ -654,10 +662,10 @@
 
       <div class="lightbox-footer">
         <button type="button" class="btn-action" id="btn-lightbox-change" style="background: var(--brand-tint); color: var(--brand-primary); border: 1px solid var(--brand-primary); flex: 1.2;">
-          🔄 เปลี่ยนรูปภาพ
+          เปลี่ยนรูปภาพ
         </button>
         <button type="button" class="btn-action" id="btn-lightbox-delete" style="background: var(--status-out-bg); color: var(--status-out); border: 1px solid var(--status-out); flex: 1;">
-          🗑️ ลบรูป
+          ลบรูป
         </button>
         <button type="button" class="btn-action" id="btn-lightbox-done" style="background: var(--brand-primary); color: #fff; flex: 1;">
           ปิด
@@ -684,7 +692,7 @@
 
       <!-- Dropzone -->
       <div class="image-upload-dropzone" id="dropzone-image">
-        <div style="font-size: 2.2rem; margin-bottom: 6px;">📷</div>
+        <div class="upload-glyph" aria-hidden="true"></div>
         <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">ลากไฟล์รูปภาพมาวางที่นี่</div>
         <div style="font-size: 0.82rem; color: var(--brand-primary); font-weight: 500; margin-bottom: 2px;">หรือแตะเพื่อเลือกไฟล์ / ถ่ายรูปจากกล้อง</div>
         <div style="font-size: 0.76rem; color: var(--text-muted);">รองรับ JPG, PNG, WebP (สามารถกด Ctrl+V เพื่อวางรูปได้)</div>
@@ -710,7 +718,7 @@
       <!-- Remove Current Image Button if exists -->
       <div id="box-remove-existing-image" style="display: none; margin-top: 16px; text-align: center;">
         <button type="button" id="btn-remove-image" class="chip" style="background: var(--status-out-bg); color: var(--status-out); border-color: var(--status-out);">
-          🗑️ ลบรูปภาพปัจจุบัน
+          ลบรูปภาพปัจจุบัน
         </button>
       </div>
 
@@ -720,7 +728,7 @@
   <!-- Soft Delete Confirmation Dialog Modal -->
   <div class="modal-overlay" id="modal-confirm-delete">
     <div class="modal-sheet" style="max-width: 420px; text-align: center;">
-      <div style="font-size: 2.5rem; margin-bottom: 10px;">⚠️</div>
+      <div class="danger-mark" aria-hidden="true">!</div>
       <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 8px;">ยืนยันการลบพัสดุ?</h3>
       <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 20px;">
         พัสดุ <strong id="delete-confirm-part-no"></strong> จะถูกซ่อน (Soft Delete) โดยยังคงประวัติการรับเข้า-เบิกออกย้อนหลังไว้ทั้งหมด
@@ -741,12 +749,12 @@
     <div class="modal-sheet">
       <div class="modal-drag-bar"></div>
       <div class="modal-header">
-        <h3 class="modal-title" style="color: #b45309;">↺ ยกเลิกรายการเคลื่อนไหว (Reversal)</h3>
+        <h3 class="modal-title" style="color: #b45309;">ยกเลิกรายการเคลื่อนไหว (Reversal)</h3>
         <button class="modal-close-btn" id="btn-close-reverse-modal">✕</button>
       </div>
 
       <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px; font-size: 0.85rem; color: #92400e; line-height: 1.5;">
-        ⚠️ <strong>ระบบ Ledger ไม่มีการลบข้อมูลจริง:</strong><br>
+        <strong>ระบบ Ledger ไม่มีการลบข้อมูลจริง:</strong><br>
         การยกเลิกจะเป็นการสร้าง <strong>รายการชดเชยกลับทิศทาง (Compensating Transaction)</strong> แบบอัตโนมัติ เพื่อปรับปรุงยอดสต๊อกให้กลับสู่ค่าเดิม โดยคงประวัติการทำรายการเดิมไว้ 100%
       </div>
 
@@ -844,7 +852,6 @@
       </div>
 
       <div class="alert-box" style="margin: 12px 0; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: 0.82rem; border-radius: var(--radius-sm); padding: 10px 12px; display: flex; gap: 8px;">
-        <span style="font-size: 1.1rem;">ℹ️</span>
         <div>
           ระบบจะบันทึกสร้างเอกสารตรวจนับ (Audit Session) และสร้างรายการปรับปรุงสต๊อก (Adjustment Movement) สำหรับรายการที่มียอดต่างโดยอัตโนมัติ เพื่อให้ยอดระบบเท่ากับยอดนับจริง
         </div>
